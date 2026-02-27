@@ -11,11 +11,10 @@ import { sortSearchResults } from '../utils/search';
 import { Ionicons } from '@expo/vector-icons';
 import debounce from 'lodash.debounce';
 import { Toast } from '../components/Toast';
-import { COLORS, STYLES } from '../theme';
-import { StarlightCard } from '../components/StarlightCard';
+import { COLORS, STYLES, FONTS } from '../theme';
 import { BanlistIcon } from '../components/BanlistIcon';
-import { BlurView } from 'expo-blur';
-import { CardInfoModal } from '../components/CardInfoModal';
+import { MMOWindow } from '../components/MMOWindow';
+import { InventorySlot } from '../components/InventorySlot';
 
 type DeckDetailScreenRouteProp = RouteProp<RootStackParamList, 'DeckDetail'>;
 type DeckDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'DeckDetail'>;
@@ -28,10 +27,6 @@ export default function DeckDetailScreen() {
   const [activeTab, setActiveTab] = useState<'main' | 'extra' | 'side'>('main');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   
-  // Info Modal state
-  const [infoModalVisible, setInfoModalVisible] = useState(false);
-  const [selectedInfoCard, setSelectedInfoCard] = useState<Card | null>(null);
-
   // Search state
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Card[]>([]);
@@ -67,24 +62,6 @@ export default function DeckDetailScreen() {
       keyboardDidShowListener.remove();
     };
   }, []);
-
-  // Handle Back Button
-  useEffect(() => {
-      const backAction = () => {
-          if (keyboardVisible) {
-              Keyboard.dismiss();
-              return true; // Prevent default behavior (going back)
-          }
-          return false; // Let default behavior happen
-      };
-
-      const backHandler = BackHandler.addEventListener(
-          'hardwareBackPress',
-          backAction
-      );
-
-      return () => backHandler.remove();
-  }, [keyboardVisible]);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -156,6 +133,7 @@ export default function DeckDetailScreen() {
       const result = await addCardToDeck(deck.id, card, section);
       if (result.success) {
           fetchDeck();
+          showToast(`Added to [${section.charAt(0).toUpperCase() + section.slice(1)}]`);
       } else {
           showToast(result.message || 'Failed to add card');
       }
@@ -166,35 +144,15 @@ export default function DeckDetailScreen() {
     fetchDeck();
   };
 
-  const handleLongPressCard = (card: Card) => {
-      setSelectedInfoCard(card);
-      setInfoModalVisible(true);
-  };
-
   const renderDeckCard = ({ item, index }: { item: Card, index: number }) => {
-      const numColumns = isWide ? 6 : 4;
-      const cardWidth = `${100 / numColumns}%`;
-
       return (
-        <View style={[styles.deckCardWrapper, { width: cardWidth }]}>
-            <TouchableOpacity 
-                style={styles.deckCard}
-                onLongPress={() => handleLongPressCard(item)}
-                onPress={() => navigation.navigate('CardDetail', { card: item })}
-            >
-                <StarlightCard card={item} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-                style={styles.removeBadge}
-                onPress={() => handleRemoveCard(index, activeTab)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                activeOpacity={0.7}
-                accessibilityLabel={`Remove ${item.name}`}
-                accessibilityRole="button"
-            >
-                <Ionicons name="close-circle" size={24} color={COLORS.cyberMagenta} />
-            </TouchableOpacity>
-        </View>
+        <InventorySlot
+            image={item.card_images[0].image_url_small}
+            quantity={1}
+            onPress={() => navigation.navigate('CardDetail', { card: item })}
+        />
+        // Note: For deck builder, we might want a way to remove cards easily.
+        // Ideally, long press or a separate "edit mode". For now, let's add a small 'x' overlay or handle on long press.
       );
   };
 
@@ -202,7 +160,6 @@ export default function DeckDetailScreen() {
     <TouchableOpacity 
       style={styles.searchItem} 
       onPress={() => handleAddCard(item)}
-      onLongPress={() => handleLongPressCard(item)}
     >
       <View style={styles.searchImageContainer}>
         <Image 
@@ -215,9 +172,9 @@ export default function DeckDetailScreen() {
       </View>
       <View style={styles.searchInfo}>
         <Text style={styles.searchName} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.searchType}>{item.type}</Text>
+        <Text style={styles.searchType}>[{item.type}]</Text>
       </View>
-      <Ionicons name="add-circle-outline" size={24} color={COLORS.electricCyan} />
+      <Ionicons name="add-circle-outline" size={20} color={COLORS.electricCyan} />
     </TouchableOpacity>
   );
 
@@ -229,60 +186,73 @@ export default function DeckDetailScreen() {
 
   const isWide = windowWidth > 768; // Simple breakpoint
 
-  if (!deck) return <View style={styles.loadingContainer}><Text>Loading...</Text></View>;
+  if (!deck) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={COLORS.electricCyan} /></View>;
 
   const currentCards = activeTab === 'main' ? deck.mainDeck : activeTab === 'extra' ? deck.extraDeck : deck.sideDeck;
 
   return (
     <View style={styles.container} onLayout={onLayout}>
       <View style={[styles.contentContainer, isWide && styles.wideContainer]}>
+
       {/* Top/Left Tray: Deck View */}
       {(!keyboardVisible || isWide) && (
         <View style={[styles.trayContainer, isWide && styles.wideTray]}>
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.deckName}>{deck.name}</Text>
-                    <Text style={styles.deckCounts}>
-                        M: {deck.mainDeck.length} | E: {deck.extraDeck.length} | S: {deck.sideDeck.length}
-                    </Text>
+
+            <MMOWindow
+                title={`Deck Builder: [${deck.name}]`}
+                icon="layers-outline"
+                style={styles.deckWindow}
+                onClose={() => navigation.goBack()}
+            >
+                {/* Deck Stats & Tabs */}
+                <View style={styles.header}>
+                    <View style={styles.tabs}>
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === 'main' && styles.activeTab]}
+                            onPress={() => setActiveTab('main')}
+                        >
+                            <Text style={[styles.tabText, activeTab === 'main' && styles.activeTabText]}>Main [{deck.mainDeck.length}]</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === 'extra' && styles.activeTab]}
+                            onPress={() => setActiveTab('extra')}
+                        >
+                            <Text style={[styles.tabText, activeTab === 'extra' && styles.activeTabText]}>Extra [{deck.extraDeck.length}]</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.tab, activeTab === 'side' && styles.activeTab]}
+                            onPress={() => setActiveTab('side')}
+                        >
+                            <Text style={[styles.tabText, activeTab === 'side' && styles.activeTabText]}>Side [{deck.sideDeck.length}]</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
 
-            <View style={styles.tabs}>
-                <TouchableOpacity 
-                    style={[styles.tab, activeTab === 'main' && styles.activeTab]} 
-                    onPress={() => setActiveTab('main')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'main' && styles.activeTabText]}>Main</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.tab, activeTab === 'extra' && styles.activeTab]} 
-                    onPress={() => setActiveTab('extra')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'extra' && styles.activeTabText]}>Extra</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                    style={[styles.tab, activeTab === 'side' && styles.activeTab]} 
-                    onPress={() => setActiveTab('side')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'side' && styles.activeTabText]}>Side</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.deckListContainer}>
+                {/* Grid */}
                 <FlatList
                     data={currentCards}
                     keyExtractor={(item, index) => `${item.id}-${index}`}
-                    renderItem={renderDeckCard}
-                    numColumns={isWide ? 6 : 4} 
+                    renderItem={({ item, index }) => (
+                        <View style={{ position: 'relative' }}>
+                             {renderDeckCard({ item, index })}
+                             <TouchableOpacity
+                                style={styles.removeBadge}
+                                onPress={() => handleRemoveCard(index, activeTab)}
+                             >
+                                 <Ionicons name="close" size={10} color="#fff" />
+                             </TouchableOpacity>
+                        </View>
+                    )}
+                    numColumns={5} // Matches inventory grid
                     contentContainerStyle={styles.deckListContent}
+                    columnWrapperStyle={{ justifyContent: 'flex-start' }}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Text style={styles.emptyText}>No cards in {activeTab} deck.</Text>
                         </View>
                     }
                 />
-            </View>
+            </MMOWindow>
         </View>
       )}
 
@@ -292,38 +262,36 @@ export default function DeckDetailScreen() {
           isWide && styles.wideSearch, 
           keyboardVisible && !isWide && styles.fullHeightSearch 
       ]}>
-        <View style={styles.searchBar}>
-            <TextInput
-                style={styles.searchInput}
-                placeholder="Search to add cards..."
-                placeholderTextColor={COLORS.textDim}
-                value={query}
-                onChangeText={handleTextChange}
-                onSubmitEditing={handleManualSearch}
-            />
-            {searching ? (
-                <ActivityIndicator size="small" color={COLORS.electricCyan} />
-            ) : (
-                <TouchableOpacity onPress={handleManualSearch} accessibilityRole="button" accessibilityLabel="Search Button">
-                    <Ionicons name="search" size={24} color={COLORS.electricCyan} />
-                </TouchableOpacity>
-            )}
-        </View>
+        <MMOWindow title="Card Database: Quick Add" icon="search-outline" style={styles.searchWindow}>
+            <View style={styles.searchBar}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search card name..."
+                    placeholderTextColor={COLORS.textDim}
+                    value={query}
+                    onChangeText={handleTextChange}
+                    onSubmitEditing={handleManualSearch}
+                />
+                {searching ? (
+                    <ActivityIndicator size="small" color={COLORS.electricCyan} />
+                ) : (
+                    <TouchableOpacity onPress={handleManualSearch}>
+                        <Ionicons name="search" size={16} color={COLORS.text} />
+                    </TouchableOpacity>
+                )}
+            </View>
 
-        <FlatList
-            data={searchResults}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderSearchItem}
-            contentContainerStyle={styles.searchListContent}
-            keyboardShouldPersistTaps="handled"
-        />
+            <FlatList
+                data={searchResults}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderSearchItem}
+                contentContainerStyle={styles.searchListContent}
+                keyboardShouldPersistTaps="handled"
+                style={{ flex: 1 }}
+            />
+        </MMOWindow>
       </View>
       </View>
-      <CardInfoModal 
-        visible={infoModalVisible} 
-        card={selectedInfoCard} 
-        onClose={() => setInfoModalVisible(false)} 
-      />
       <Toast message={toastMessage} visible={toastVisible} />
     </View>
   );
@@ -332,7 +300,8 @@ export default function DeckDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.deepVoid,
+    paddingTop: 10,
+    paddingHorizontal: 5,
   },
   contentContainer: {
     flex: 1,
@@ -347,43 +316,29 @@ const styles = StyleSheet.create({
       alignItems: 'center',
   },
   trayContainer: {
-      flex: 0.55,
-      backgroundColor: 'rgba(5, 5, 16, 0.5)',
-      borderBottomWidth: 1,
-      borderBottomColor: COLORS.chromeMist,
+      flex: 0.6,
+      marginBottom: 10,
   },
   wideTray: {
       flex: 0.6,
-      borderBottomWidth: 0,
-      borderRightWidth: 1,
-      borderRightColor: COLORS.chromeMist,
+      marginBottom: 0,
+      marginRight: 10,
+  },
+  deckWindow: {
+      flex: 1,
   },
   header: {
-    padding: 15,
     paddingBottom: 5,
-  },
-  deckName: {
-    fontSize: 20,
-    fontFamily: 'Orbitron_700Bold',
-    color: COLORS.text,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  deckCounts: {
-      fontSize: 12,
-      fontFamily: 'Inter_400Regular',
-      color: COLORS.textDim,
-      marginTop: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#bdc3c7',
+    marginBottom: 5,
   },
   tabs: {
       flexDirection: 'row',
-      borderBottomWidth: 1,
-      borderBottomColor: COLORS.chromeMist,
-      marginTop: 5,
   },
   tab: {
       flex: 1,
-      paddingVertical: 10,
+      paddingVertical: 6,
       alignItems: 'center',
       borderBottomWidth: 2,
       borderBottomColor: 'transparent',
@@ -392,47 +347,30 @@ const styles = StyleSheet.create({
       borderBottomColor: COLORS.electricCyan,
   },
   tabText: {
-      fontSize: 14,
-      fontFamily: 'Inter_500Medium',
+      fontSize: 12,
+      fontFamily: FONTS.body,
       color: COLORS.textDim,
   },
   activeTabText: {
       color: COLORS.electricCyan,
-  },
-  deckListContainer: {
-      flex: 1,
-      backgroundColor: 'transparent',
+      fontWeight: 'bold',
   },
   deckListContent: {
       padding: 5,
   },
-  deckCardWrapper: {
-      // Width is set dynamically in renderItem to fix scaling issues on last row
-      aspectRatio: 0.68,
-      padding: 1, // Use padding instead of margin for grid alignment
-      position: 'relative',
-      zIndex: 1,
-  },
-  deckCard: {
-      width: '100%',
-      height: '100%',
-      borderRadius: 4,
-      overflow: 'hidden',
-      elevation: 2,
-  },
-  deckCardImage: {
-      width: '100%',
-      height: '100%',
-  },
   removeBadge: {
       position: 'absolute',
-      top: 2,
-      right: 2,
-      backgroundColor: '#000',
-      borderRadius: 12,
-      elevation: 10,
+      top: 0,
+      right: 0,
+      backgroundColor: COLORS.cyberMagenta,
+      width: 16,
+      height: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 8,
       zIndex: 10,
-      padding: 2,
+      borderWidth: 1,
+      borderColor: '#fff',
   },
   emptyContainer: {
       padding: 20,
@@ -441,68 +379,69 @@ const styles = StyleSheet.create({
   emptyText: {
       color: COLORS.textDim,
       fontStyle: 'italic',
-      fontFamily: 'Inter_400Regular',
+      fontSize: 12,
   },
   searchSection: {
-      flex: 0.45,
-      backgroundColor: 'rgba(5, 5, 16, 0.3)',
-      borderTopWidth: 1,
-      borderTopColor: COLORS.chromeMist,
+      flex: 0.4,
+      marginBottom: 10,
   },
   fullHeightSearch: {
       flex: 1,
-      borderTopWidth: 0,
   },
   wideSearch: {
       flex: 0.4,
-      borderTopWidth: 0,
+  },
+  searchWindow: {
+      flex: 1,
   },
   searchBar: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-      margin: 10,
-      paddingHorizontal: 10,
-      borderRadius: 20, // Rounded for Omni-bar look
-      height: 40,
-      borderWidth: 1,
-      borderColor: COLORS.chromeMist,
+      ...STYLES.bevelIn,
+      backgroundColor: '#fff',
+      paddingHorizontal: 8,
+      height: 32,
+      marginBottom: 8,
   },
   searchInput: {
       flex: 1,
       height: '100%',
       color: COLORS.text,
-      fontFamily: 'Inter_400Regular',
+      fontFamily: FONTS.body,
+      fontSize: 12,
   },
   searchListContent: {
-      paddingHorizontal: 10,
+      paddingHorizontal: 2,
   },
   searchItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: '#ecf0f1',
   },
   searchImageContainer: {
-      position: 'relative',
-      marginRight: 12,
+      width: 30,
+      height: 44,
+      marginRight: 8,
+      ...STYLES.bevelIn,
+      padding: 1,
+      backgroundColor: '#fff',
   },
   searchImage: {
-    width: 37.5,
-    height: 55,
+    width: '100%',
+    height: '100%',
   },
   searchInfo: {
     flex: 1,
   },
   searchName: {
-    fontSize: 14,
-    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    fontFamily: FONTS.header,
     color: COLORS.text,
   },
   searchType: {
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
+    fontSize: 10,
     color: COLORS.textDim,
   },
 });

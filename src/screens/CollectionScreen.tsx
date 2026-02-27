@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,8 +9,9 @@ import { exportCollectionToExcel, importCollectionFromExcel } from '../services/
 import { CollectionItem } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, STYLES, FONTS } from '../theme';
-import { TickingPrice } from '../components/TickingPrice';
+import { COLORS, FONTS } from '../theme';
+import { MMOWindow } from '../components/MMOWindow';
+import { InventorySlot } from '../components/InventorySlot';
 
 type CollectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Tabs'>;
 
@@ -31,8 +32,17 @@ export default function CollectionScreen() {
   );
 
   const handleRemove = async (id: string) => {
-    await removeCollectionItem(id);
-    fetchCollection();
+      Alert.alert(
+          "Remove Item",
+          "Are you sure you want to delete this card?",
+          [
+              { text: "Cancel", style: "cancel" },
+              { text: "Delete", style: 'destructive', onPress: async () => {
+                  await removeCollectionItem(id);
+                  fetchCollection();
+              }}
+          ]
+      );
   };
 
   const handleExport = () => {
@@ -96,91 +106,54 @@ export default function CollectionScreen() {
   };
 
   const renderItem = ({ item }: { item: CollectionItem }) => {
-    // Determine full set name
-    const setInfo = item.cardData.card_sets?.find(s => s.set_code === item.setCode);
-    const setDisplayName = setInfo ? setInfo.set_name : (item.setCode || 'No Set');
-
     return (
-        <View style={styles.cardItem}>
-        <TouchableOpacity 
-            style={styles.cardContent}
+        <InventorySlot
+            image={item.cardData.card_images[0].image_url_small}
+            quantity={1} // Collections are individual items usually, but could aggregate
             onPress={() => navigation.navigate('CardDetail', { card: item.cardData })}
-        >
-            <Image 
-                source={{ uri: item.cardData.card_images[0].image_url_small }} 
-                style={styles.cardImage} 
-            />
-            <View style={styles.cardInfo}>
-                <Text style={styles.cardName}>{item.cardData.name}</Text>
-                
-                <Text style={styles.setName}>
-                    {setDisplayName} {item.setCode && setInfo ? `(${item.setCode})` : ''}
-                </Text>
-
-                <View style={styles.detailsRow}>
-                    <Text style={styles.detailText}>{item.condition}</Text>
-                    <Text style={styles.separator}>•</Text>
-                    <Text style={styles.detailText}>{item.edition === '1st Edition' ? '1st' : 'Unl'}</Text>
-                </View>
-                {item.isGraded && (
-                    <Text style={styles.gradedText}>
-                        Graded: {item.gradingCompany} {item.grade}
-                    </Text>
-                )}
-                {item.purchasePrice && (
-                    <TickingPrice 
-                        value={item.purchasePrice} 
-                        prefix="Paid: $" 
-                        style={styles.price} 
-                    />
-                )}
-            </View>
-        </TouchableOpacity>
-        
-        <TouchableOpacity onPress={() => handleRemove(item.id)} style={styles.removeButton}>
-            <Ionicons name="trash-outline" size={24} color={COLORS.cyberMagenta} />
-        </TouchableOpacity>
-        </View>
+        />
     );
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Collection</Text>
-      </View>
 
-      <View style={styles.actionsBar}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleExport}>
-              <Ionicons name="download-outline" size={20} color="#000" />
-              <Text style={styles.actionButtonText}>Export</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleImport}>
-              <Ionicons name="cloud-upload-outline" size={20} color="#000" />
-              <Text style={styles.actionButtonText}>Import</Text>
-          </TouchableOpacity>
-      </View>
-
-      {loading && (
-          <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color={COLORS.electricCyan} />
-              <Text style={styles.loadingText}>Processing...</Text>
-          </View>
-      )}
-
-      {collection.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Your collection is empty.</Text>
-          <Text style={styles.emptySubtext}>Search for cards to add them!</Text>
+      {/* Tools Window */}
+      <MMOWindow title="Collection: Tools" style={styles.toolsWindow} icon="construct-outline">
+        <View style={styles.actionsBar}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExport}>
+                <Ionicons name="download-outline" size={16} color={COLORS.text} />
+                <Text style={styles.actionButtonText}>Export</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleImport}>
+                <Ionicons name="cloud-upload-outline" size={16} color={COLORS.text} />
+                <Text style={styles.actionButtonText}>Import</Text>
+            </TouchableOpacity>
+             <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center'}}>
+                <Text style={styles.countText}>Items: {collection.length}</Text>
+             </View>
         </View>
-      ) : (
-        <FlatList
-          data={collection}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
+      </MMOWindow>
+
+      {/* Main Inventory Window */}
+      <MMOWindow title="My Collection Quick Grid" style={styles.gridWindow} icon="grid-outline">
+        {collection.length === 0 ? (
+            <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Your inventory is empty.</Text>
+            <Text style={styles.emptySubtext}>Go to [Search] to find items.</Text>
+            </View>
+        ) : (
+            <FlatList
+            data={collection}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            numColumns={5} // 5 slots wide like classic MMO
+            contentContainerStyle={styles.listContent}
+            columnWrapperStyle={styles.columnWrapper}
+            />
+        )}
+      </MMOWindow>
+
     </SafeAreaView>
   );
 }
@@ -188,149 +161,64 @@ export default function CollectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.deepVoid,
-  },
-  header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-  },
-  headerTitle: {
-      fontSize: 24,
-      fontFamily: FONTS.header,
-      color: COLORS.text,
-  },
-  listContent: {
     padding: 10,
-    paddingBottom: 80,
+  },
+  toolsWindow: {
+      marginBottom: 10,
+      height: 70,
+  },
+  gridWindow: {
+      flex: 1,
+      marginBottom: 60, // Space for command bar
   },
   actionsBar: {
       flexDirection: 'row',
-      justifyContent: 'space-around',
-      padding: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: COLORS.chromeMist,
-      backgroundColor: 'rgba(0,0,0,0.2)'
+      alignItems: 'center',
   },
   actionButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: COLORS.electricCyan,
-      paddingVertical: 8,
-      paddingHorizontal: 15,
-      borderRadius: 20,
+      backgroundColor: '#ecf0f1',
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 4,
+      marginRight: 10,
+      borderWidth: 1,
+      borderColor: '#bdc3c7',
   },
   actionButtonText: {
-      color: '#000',
-      fontWeight: 'bold',
+      color: COLORS.text,
       marginLeft: 5,
       fontFamily: FONTS.body,
+      fontSize: 12,
   },
-  loadingOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 100,
+  countText: {
+      color: COLORS.textDim,
+      fontSize: 12,
+      fontFamily: FONTS.body,
   },
-  loadingText: {
-      color: '#fff',
-      marginTop: 10,
-      fontFamily: FONTS.header,
+  listContent: {
+    padding: 5,
+  },
+  columnWrapper: {
+      justifyContent: 'flex-start',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   emptyText: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 5,
     color: COLORS.text,
     fontFamily: FONTS.header,
   },
   emptySubtext: {
-    fontSize: 16,
-    color: COLORS.textDim,
-    fontFamily: FONTS.body,
-  },
-  cardItem: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.glassBackground,
-    marginBottom: 10,
-    borderRadius: 8,
-    overflow: 'hidden',
-    padding: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
-  },
-  cardContent: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  cardImage: {
-    width: 60,
-    height: 87,
-    marginRight: 10,
-  },
-  cardInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  cardName: {
-    fontSize: 16,
-    fontFamily: FONTS.header,
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  setName: {
-    fontSize: 12,
-    color: COLORS.textDim,
-    marginBottom: 4,
-    fontFamily: FONTS.body,
-    flexWrap: 'wrap',
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  detailText: {
-    fontSize: 12,
-    color: COLORS.text,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontFamily: FONTS.body,
-  },
-  separator: {
-    marginHorizontal: 4,
-    color: COLORS.textDim,
-  },
-  gradedText: {
-      fontSize: 12,
-      color: COLORS.electricCyan,
-      fontWeight: 'bold',
-      marginTop: 2,
-      fontFamily: FONTS.body,
-  },
-  price: {
     fontSize: 14,
-    color: '#00FF00',
-    fontWeight: '600',
-    marginTop: 2,
+    color: COLORS.textDim,
     fontFamily: FONTS.body,
   },
-  removeButton: {
-    padding: 10,
-  }
 });

@@ -2,7 +2,6 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 
 import SearchScreen from '../screens/SearchScreen';
 import WishlistScreen from '../screens/WishlistScreen';
@@ -13,7 +12,7 @@ import DecksScreen from '../screens/DecksScreen';
 import DeckDetailScreen from '../screens/DeckDetailScreen';
 import ScanCardScreen from '../screens/ScanCardScreen';
 import { Card } from '../services/api';
-import { FloatingDock } from '../components/FloatingDock';
+import { MMOCommandBar } from '../components/MMOCommandBar';
 import { COLORS, STYLES, FONTS } from '../theme';
 
 export type RootStackParamList = {
@@ -37,7 +36,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function TabNavigator() {
   return (
     <Tab.Navigator
-      tabBar={(props) => <FloatingDock {...props} />}
+      tabBar={(props) => <MMOCommandBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
@@ -65,43 +64,35 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-            headerStyle: {
-                backgroundColor: COLORS.deepVoid,
-            },
-            headerTintColor: COLORS.electricCyan,
-            headerTitleStyle: {
-                fontFamily: FONTS.header,
-                color: COLORS.text,
-            },
+            // Remove default headers to use custom MMOWindow headers where appropriate
+            // or style them to match the theme if we keep them for stack screens
+            headerShown: false,
             contentStyle: {
-                backgroundColor: COLORS.deepVoid,
+                backgroundColor: 'transparent', // Let the global background show through
             }
         }}
       >
         <Stack.Screen 
           name="Tabs" 
           component={TabNavigator} 
-          options={{ headerShown: false }} 
         />
         <Stack.Screen 
           name="CardDetail" 
           component={CardDetailScreen} 
-          options={{ title: 'Card Details' }}
+          // options={{ title: 'Card Details' }} // Hidden to use custom window
         />
         <Stack.Screen 
           name="AddCard" 
           component={AddCardScreen} 
-          options={{ title: 'Add to Collection' }}
+          options={{ headerShown: true, title: '[Add to Collection]', headerStyle: { backgroundColor: COLORS.windowHeader }, headerTintColor: COLORS.text, headerTitleStyle: { fontFamily: FONTS.header, fontSize: 14 } }}
         />
         <Stack.Screen 
           name="DeckDetail" 
           component={DeckDetailScreen} 
-          options={{ title: 'Deck Builder' }}
         />
         <Stack.Screen 
           name="ScanCard" 
           component={ScanCardScreen} 
-          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

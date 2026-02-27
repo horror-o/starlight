@@ -11,6 +11,7 @@ import { Toast } from '../components/Toast';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, STYLES, FONTS } from '../theme';
 import { TickingPrice } from '../components/TickingPrice';
+import { MMOWindow } from '../components/MMOWindow';
 
 type CardDetailScreenRouteProp = RouteProp<RootStackParamList, 'CardDetail'>;
 type CardDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, 'CardDetail'>;
@@ -27,7 +28,6 @@ export default function CardDetailScreen() {
   // Deck selection states
   const [modalVisible, setModalVisible] = useState(false);
   const [decks, setDecks] = useState<Deck[]>([]);
-  const [selectedDeck, setSelectedDeck] = useState<Deck | null>(null);
   const [newDeckName, setNewDeckName] = useState('');
 
   // Toast state
@@ -59,7 +59,7 @@ export default function CardDetailScreen() {
     const success = await addToWishlist(card);
     if (success) {
         setSuccessType('wishlist');
-        setSuccessMessage('Added to Wishlist');
+        setSuccessMessage('Added to [Wishlist]');
         setShowSuccess(true);
     } else {
         Alert.alert('Info', 'Already in Wishlist');
@@ -78,7 +78,7 @@ export default function CardDetailScreen() {
           setModalVisible(false);
           setTargetDeck(deck);
           setSuccessType('deck');
-          setSuccessMessage(`Added to ${deck.name}`);
+          setSuccessMessage(`Added to [${deck.name}]`);
           setShowSuccess(true);
       } else {
           setModalVisible(false);
@@ -130,326 +130,326 @@ export default function CardDetailScreen() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
-    {showSuccess && (
-        <SuccessView 
-            message={successMessage}
-            primaryText="Done"
-            onPrimaryPress={handleDone}
-            secondaryText="Stay Here"
-            onSecondaryPress={handleStay}
-            tertiaryText={successType === 'wishlist' ? "View Wishlist" : "View Deck"}
-            onTertiaryPress={handleViewAction}
-        />
-    )}
-    <ScrollView style={styles.container}>
-      <Image 
-        source={{ uri: card.card_images[0].image_url }} 
-        style={styles.image} 
-        resizeMode="contain"
-      />
-      
-      <View style={styles.detailsContainer}>
-        <Text style={styles.name}>{card.name}</Text>
-        
-        <View style={styles.row}>
-            <View style={styles.badge}>
-                <Text style={styles.badgeText}>{card.type}</Text>
-            </View>
-            <View style={[styles.badge, styles.badgeSecondary]}>
-                <Text style={styles.badgeText}>{card.race}</Text>
-            </View>
-            {card.attribute && (
-                <View style={[styles.badge, styles.badgeTertiary]}>
-                    <Text style={styles.badgeText}>{card.attribute}</Text>
-                </View>
-            )}
-        </View>
-
-        {(card.atk !== undefined || card.def !== undefined) && (
-             <View style={styles.statsRow}>
-                {card.atk !== undefined && <Text style={styles.statText}>ATK: {card.atk}</Text>}
-                {card.def !== undefined && <Text style={styles.statText}>DEF: {card.def}</Text>}
-                {card.level !== undefined && <Text style={styles.statText}>Level: {card.level}</Text>}
-             </View>
+    <View style={styles.screenContainer}>
+        {showSuccess && (
+            <SuccessView
+                message={successMessage}
+                primaryText="Done"
+                onPrimaryPress={handleDone}
+                secondaryText="Stay Here"
+                onSecondaryPress={handleStay}
+                tertiaryText={successType === 'wishlist' ? "View Wishlist" : "View Deck"}
+                onTertiaryPress={handleViewAction}
+            />
         )}
 
-        <Text style={styles.desc}>{card.desc}</Text>
+        <ScrollView style={styles.scrollContainer} contentContainerStyle={{ paddingBottom: 40 }}>
+            {/* Main Details Window */}
+            <MMOWindow title={`Card Detail: ${card.name}`} icon="information-circle-outline" onClose={() => navigation.goBack()} style={styles.detailWindow}>
+                <View style={styles.contentRow}>
+                    {/* Card Image */}
+                    <View style={styles.imageContainer}>
+                         <Image
+                            source={{ uri: card.card_images[0].image_url }}
+                            style={styles.image}
+                            resizeMode="contain"
+                        />
+                    </View>
 
-        <View style={styles.priceContainer}>
-            <Text style={styles.priceTitle}>Market Prices:</Text>
-            {card.card_prices.map((price, index) => (
-                <View key={index}>
-                    <TickingPrice value={price.tcgplayer_price} prefix="TCGPlayer: $" style={styles.priceText} />
-                    <TickingPrice value={price.cardmarket_price} prefix="Cardmarket: €" style={styles.priceText} />
-                    <TickingPrice value={price.ebay_price} prefix="eBay: $" style={styles.priceText} />
-                    <TickingPrice value={price.amazon_price} prefix="Amazon: $" style={styles.priceText} />
+                    {/* Stats Grid */}
+                    <View style={styles.statsContainer}>
+                        <View style={styles.statRow}>
+                            <Text style={styles.statLabel}>Type</Text>
+                            <Text style={styles.statValue}>[{card.type}]</Text>
+                        </View>
+                        <View style={styles.statRow}>
+                            <Text style={styles.statLabel}>Attribute</Text>
+                            <Text style={styles.statValue}>[{card.attribute || 'N/A'}]</Text>
+                        </View>
+                         <View style={styles.statRow}>
+                            <Text style={styles.statLabel}>Level/Rank</Text>
+                            <Text style={styles.statValue}>[{card.level || '-'}]</Text>
+                        </View>
+                        <View style={styles.separator} />
+                        <View style={styles.statRow}>
+                            <Text style={styles.statLabel}>ATK</Text>
+                            <Text style={styles.statValue}>[{card.atk || '-'}]</Text>
+                        </View>
+                        <View style={styles.statRow}>
+                            <Text style={styles.statLabel}>DEF</Text>
+                            <Text style={styles.statValue}>[{card.def || '-'}]</Text>
+                        </View>
+                    </View>
                 </View>
-            ))}
-        </View>
 
-        <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-                style={[styles.button, styles.buttonAdd]}
-                onPress={handleAddCollection}
-            >
-                <Text style={styles.buttonText}>Add to Collection</Text>
-            </TouchableOpacity>
+                {/* Card Text */}
+                <View style={styles.textSection}>
+                    <Text style={styles.sectionHeader}>[Card Text]</Text>
+                    <View style={styles.textBox}>
+                        <Text style={styles.desc}>{card.desc}</Text>
+                    </View>
+                </View>
+            </MMOWindow>
 
-            <TouchableOpacity 
-                style={[styles.button, styles.buttonDeck]}
-                onPress={() => setModalVisible(true)}
-            >
-                <Text style={styles.buttonText}>Add to Deck</Text>
-            </TouchableOpacity>
-        </View>
-        
-        <View style={[styles.buttonContainer, { marginTop: 10 }]}>
-            <TouchableOpacity 
-                style={[styles.button, styles.buttonWishlist]}
-                onPress={handleAddWishlist}
-            >
-                <Text style={styles.buttonText}>Add to Wishlist</Text>
-            </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+            {/* Market Prices Window */}
+            <MMOWindow title="Market Data" icon="pricetag-outline" style={styles.marketWindow}>
+                 {card.card_prices.map((price, index) => (
+                    <View key={index} style={styles.priceGrid}>
+                        <View style={styles.priceRow}>
+                            <Text style={styles.priceLabel}>TCGPlayer:</Text>
+                            <Text style={styles.priceValue}>${price.tcgplayer_price}</Text>
+                        </View>
+                         <View style={styles.priceRow}>
+                            <Text style={styles.priceLabel}>Cardmarket:</Text>
+                            <Text style={styles.priceValue}>€{price.cardmarket_price}</Text>
+                        </View>
+                    </View>
+                ))}
+            </MMOWindow>
 
-    <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-    >
-        <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Select a Deck</Text>
-                    <TouchableOpacity onPress={() => setModalVisible(false)}>
-                        <Ionicons name="close" size={24} color={COLORS.text} />
+            {/* Actions Window */}
+            <MMOWindow title="Actions" icon="flash-outline" style={styles.actionsWindow}>
+                <View style={styles.buttonGrid}>
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={handleAddCollection}
+                    >
+                        <Text style={styles.actionButtonText}>Add to Collection</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => setModalVisible(true)}
+                    >
+                        <Text style={styles.actionButtonText}>Add to Deck</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={handleAddWishlist}
+                    >
+                        <Text style={styles.actionButtonText}>Add to Wishlist</Text>
                     </TouchableOpacity>
                 </View>
-                
-                {decks.length === 0 ? (
-                    <View style={styles.emptyDecks}>
-                        <Text style={{color: COLORS.text, marginBottom: 15, textAlign: 'center'}}>
-                            No decks found. Create one to add this card!
-                        </Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Deck Name"
-                            placeholderTextColor={COLORS.textDim}
-                            value={newDeckName}
-                            onChangeText={setNewDeckName}
+            </MMOWindow>
+
+        </ScrollView>
+
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+        >
+            <View style={styles.modalOverlay}>
+                <MMOWindow title="Select Deck" icon="albums-outline" onClose={() => setModalVisible(false)} style={styles.modalWindow}>
+                    {decks.length === 0 ? (
+                        <View style={styles.emptyDecks}>
+                            <Text style={styles.emptyDeckText}>
+                                No decks found.
+                            </Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="New Deck Name..."
+                                placeholderTextColor={COLORS.textDim}
+                                value={newDeckName}
+                                onChangeText={setNewDeckName}
+                            />
+                            <TouchableOpacity
+                                style={styles.createButton}
+                                onPress={handleCreateAndAddDeck}
+                            >
+                                <Text style={styles.createButtonText}>Create & Add</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={decks}
+                            keyExtractor={(item) => item.id}
+                            renderItem={renderDeckItem}
+                            style={{ maxHeight: 300 }}
                         />
-                        <TouchableOpacity 
-                            style={styles.createButton}
-                            onPress={handleCreateAndAddDeck}
-                        >
-                            <Text style={styles.buttonText}>Create & Add</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={decks}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderDeckItem}
-                        style={{ maxHeight: 300 }}
-                    />
-                )}
+                    )}
+                </MMOWindow>
             </View>
-        </View>
-    </Modal>
-    <Toast message={toastMessage} visible={toastVisible} />
+        </Modal>
+        <Toast message={toastMessage} visible={toastVisible} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screenContainer: {
     flex: 1,
-    backgroundColor: COLORS.deepVoid,
+    paddingTop: 10,
+  },
+  scrollContainer: {
+    paddingHorizontal: 10,
+  },
+  detailWindow: {
+      marginBottom: 10,
+  },
+  marketWindow: {
+      marginBottom: 10,
+  },
+  actionsWindow: {
+      marginBottom: 20,
+  },
+  contentRow: {
+      flexDirection: 'row',
+      marginBottom: 15,
+  },
+  imageContainer: {
+      width: 120,
+      height: 175,
+      ...STYLES.bevelIn, // Inset look for image slot
+      padding: 2,
+      backgroundColor: '#fff',
+      marginRight: 15,
   },
   image: {
-    width: '100%',
-    height: 400,
-    backgroundColor: 'transparent',
+      width: '100%',
+      height: '100%',
   },
-  detailsContainer: {
-    padding: 20,
-    paddingBottom: 40,
+  statsContainer: {
+      flex: 1,
+      justifyContent: 'flex-start',
   },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: COLORS.text,
-    fontFamily: FONTS.header,
+  statRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+      alignItems: 'center',
   },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 15,
+  statLabel: {
+      fontSize: 12,
+      color: COLORS.textDim,
+      fontFamily: FONTS.body,
   },
-  badge: {
-    backgroundColor: COLORS.glassBackground,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 15,
-    marginRight: 10,
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
+  statValue: {
+      fontSize: 13,
+      color: COLORS.text,
+      fontWeight: 'bold',
+      fontFamily: FONTS.body,
   },
-  badgeSecondary: {
-    backgroundColor: 'rgba(10, 189, 198, 0.2)',
-    borderColor: COLORS.electricCyan,
+  separator: {
+      height: 1,
+      backgroundColor: '#bdc3c7',
+      marginVertical: 6,
   },
-  badgeTertiary: {
-    backgroundColor: 'rgba(234, 0, 217, 0.2)',
-    borderColor: COLORS.cyberMagenta,
+  textSection: {
+      marginTop: 5,
   },
-  badgeText: {
-    color: COLORS.text,
-    fontWeight: 'bold',
-    fontSize: 12,
-    fontFamily: FONTS.body,
+  sectionHeader: {
+      color: COLORS.electricCyan,
+      fontWeight: 'bold',
+      marginBottom: 5,
+      fontSize: 12,
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: COLORS.glassBackground,
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
-  },
-  statText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    fontFamily: FONTS.body,
+  textBox: {
+      ...STYLES.bevelIn,
+      backgroundColor: '#fff',
+      padding: 8,
+      height: 100,
   },
   desc: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: COLORS.textDim,
-    marginBottom: 20,
-    fontFamily: FONTS.body,
+      fontSize: 12,
+      color: COLORS.text,
+      fontFamily: FONTS.body,
+      lineHeight: 16,
   },
-  priceContainer: {
-    backgroundColor: COLORS.glassBackground,
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
+  priceGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
   },
-  priceTitle: {
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: COLORS.electricCyan,
-    fontFamily: FONTS.header,
+  priceRow: {
+      width: '50%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 5,
   },
-  priceText: {
-    color: COLORS.text,
-    fontFamily: FONTS.body,
-    marginBottom: 2,
+  priceLabel: {
+      fontSize: 12,
+      color: COLORS.textDim,
+      marginRight: 5,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  priceValue: {
+      fontSize: 12,
+      color: COLORS.text,
+      fontWeight: 'bold',
   },
-  button: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginHorizontal: 5,
+  buttonGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
   },
-  buttonAdd: {
-    backgroundColor: COLORS.electricCyan,
+  actionButton: {
+      flex: 1,
+      backgroundColor: '#ecf0f1',
+      borderWidth: 1,
+      borderColor: '#bdc3c7',
+      borderRadius: 4,
+      paddingVertical: 10,
+      alignItems: 'center',
+      marginHorizontal: 2,
+      ...STYLES.bevelOut,
   },
-  buttonDeck: {
-      backgroundColor: 'rgba(255, 152, 0, 0.8)', // Orange still distinctive but simpler
-  },
-  buttonWishlist: {
-    backgroundColor: COLORS.cyberMagenta,
-  },
-  buttonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: FONTS.header,
+  actionButtonText: {
+      fontSize: 11,
+      fontWeight: 'bold',
+      color: COLORS.text,
   },
   modalOverlay: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.8)',
+      backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  modalContent: {
+  modalWindow: {
       width: '85%',
-      backgroundColor: COLORS.deepVoid,
-      borderRadius: 10,
-      padding: 20,
-      elevation: 5,
-      borderWidth: 1,
-      borderColor: COLORS.chromeMist,
-  },
-  modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 15,
-  },
-  modalTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: COLORS.text,
-      fontFamily: FONTS.header,
+      maxHeight: 400,
   },
   deckItem: {
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#bdc3c7',
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: COLORS.chromeMist,
+      paddingHorizontal: 10,
   },
   deckName: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: 'bold',
       color: COLORS.text,
-      fontFamily: FONTS.body,
   },
   deckCount: {
-      fontSize: 12,
+      fontSize: 11,
       color: COLORS.textDim,
-      fontFamily: FONTS.body,
   },
   emptyDecks: {
       padding: 20,
       alignItems: 'center',
-      width: '100%',
+  },
+  emptyDeckText: {
+      marginBottom: 10,
+      color: COLORS.text,
   },
   input: {
-      backgroundColor: COLORS.glassBackground,
-      color: COLORS.text,
-      padding: 10,
-      borderRadius: 5,
-      borderWidth: 1,
-      borderColor: COLORS.chromeMist,
-      marginBottom: 15,
       width: '100%',
-      fontFamily: FONTS.body,
+      ...STYLES.bevelIn,
+      backgroundColor: '#fff',
+      padding: 8,
+      marginBottom: 10,
   },
   createButton: {
+      width: '100%',
       backgroundColor: COLORS.electricCyan,
       padding: 10,
-      borderRadius: 5,
       alignItems: 'center',
-      width: '100%',
+      borderRadius: 4,
+  },
+  createButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
   },
 });

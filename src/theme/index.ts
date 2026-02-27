@@ -1,31 +1,76 @@
 export const COLORS = {
-  deepVoid: '#050510',
-  chromeMist: 'rgba(206, 217, 239, 0.2)',
-  cyberMagenta: '#EA00D9',
-  electricCyan: '#0ABDC6',
-  text: '#FFFFFF',
-  textDim: 'rgba(255, 255, 255, 0.7)',
-  glassBackground: 'rgba(10, 11, 25, 0.6)',
+  // MMO Theme
+  deepVoid: '#f0f4f8', // Changed to light airy blue-grey
+  glassBackground: 'rgba(230, 240, 255, 0.85)', // Light translucent pastel blue
+  chromeMist: '#c8d6e5', // Soft blue-grey for borders
+  electricCyan: '#2d98da', // Darker blue for accents/active states
+  cyberMagenta: '#eb3b5a', // Soft red for alerts/actions
+  text: '#2c3e50', // Dark blue-grey for main text
+  textDim: '#7f8fa6', // Muted blue-grey for secondary text
+
+  // Specific UI Colors
+  windowHeader: '#dfe6e9', // Light grey for window headers
+  windowBorderLight: '#ffffff', // Bevel highlight
+  windowBorderDark: '#bdc3c7', // Bevel shadow
+  inputBackground: '#ffffff',
+  slotBackground: 'rgba(255, 255, 255, 0.5)',
+
+  // Retro Status Colors
+  success: '#20bf6b',
+  warning: '#fa8231',
+  error: '#eb3b5a',
 };
 
 export const FONTS = {
-  header: 'Orbitron_700Bold',
-  body: 'Inter_400Regular',
-  bodyMedium: 'Inter_500Medium',
+  header: 'System',
+  body: 'System',
+  bodyMedium: 'System',
 };
 
 export const STYLES = {
+  // Windows 95 / MMO Style Bevels
+  bevelOut: {
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderTopColor: '#ffffff',
+    borderLeftColor: '#ffffff',
+    borderRightColor: '#bdc3c7', // Darker shadow
+    borderBottomColor: '#bdc3c7',
+    backgroundColor: '#ecf0f1',
+  },
+  bevelIn: {
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderTopColor: '#bdc3c7', // Inner shadow top
+    borderLeftColor: '#bdc3c7', // Inner shadow left
+    borderRightColor: '#ffffff',
+    borderBottomColor: '#ffffff',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  windowHeader: {
+    backgroundColor: '#dcdde1', // Gradient-like solid color
+    borderBottomWidth: 1,
+    borderBottomColor: '#bdc3c7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
   glass: {
     backgroundColor: COLORS.glassBackground,
     borderColor: COLORS.chromeMist,
     borderWidth: 1,
     // Note: backdropFilter is web only, BlurView needed for native
-    backdropFilter: 'blur(16px)', 
+    backdropFilter: 'blur(10px)',
   },
   glow: {
-    shadowColor: COLORS.electricCyan,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
+    // Subtle shadow instead of neon glow
+    shadowColor: '#2d98da',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   }
 };
