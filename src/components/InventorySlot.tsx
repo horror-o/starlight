@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   selectedSlot: {
-    backgroundColor: 'rgba(45, 152, 218, 0.2)', // Highlight color
+    backgroundColor: 'rgba(214, 51, 132, 0.2)', // Highlight color
     borderColor: COLORS.electricCyan,
     borderWidth: 2,
   },

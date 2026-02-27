@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,8 +11,9 @@ import { BanlistIcon } from '../components/BanlistIcon';
 import debounce from 'lodash.debounce';
 import { Ionicons } from '@expo/vector-icons';
 import { MMOWindow } from '../components/MMOWindow';
+import { CardDetailView } from '../components/CardDetailView';
 
-type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Tabs'>;
+type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
@@ -21,37 +22,47 @@ export default function SearchScreen() {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const insets = useSafeAreaInsets();
 
-  // Create a debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (searchQuery: string) => {
-      if (!searchQuery) {
-        setCards([]);
-        return;
-      }
-      setLoading(true);
-      const results = await searchCards(searchQuery);
-      const sortedResults = sortSearchResults(results, searchQuery);
-      setCards(sortedResults);
-      setLoading(false);
-    }, 500),
-    []
-  );
+  // Modal state
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
-  const handleTextChange = (text: string) => {
-    setQuery(text);
-    debouncedSearch(text);
+  // Create a debounced search function
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSearch = debounce(async (searchQuery: string) => {
+    if (!searchQuery) {
+      setCards([]);
+      return;
+    }
+    setLoading(true);
+    try {
+        const results = await searchCards(searchQuery);
+        // Only update if the query matches current input to avoid race conditions
+        setCards(results);
+    } catch (e) {
+        console.error(e);
+    } finally {
+        setLoading(false);
+    }
+  }, 500);
+
+  useEffect(() => {
+      debouncedSearch(query);
+      return () => {
+          debouncedSearch.cancel();
+      }
+  }, [query, debouncedSearch]);
+
+  const handleCardPress = (card: Card) => {
+      setSelectedCard(card);
   };
 
-  const handleManualSearch = () => {
-    // If debounced search hasn't fired yet or to force a search
-    debouncedSearch(query);
-    debouncedSearch.flush(); // Execute immediately
+  const closeDetail = () => {
+      setSelectedCard(null);
   };
 
   const renderItem = ({ item }: { item: Card }) => (
     <TouchableOpacity 
       style={styles.cardItem} 
-      onPress={() => navigation.navigate('CardDetail', { card: item })}
+      onPress={() => handleCardPress(item)}
     >
       <View style={styles.imageContainer}>
         <Image 
@@ -74,15 +85,14 @@ export default function SearchScreen() {
     <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       
       {/* Search Bar Window */}
-      <MMOWindow title="Database: Search" icon="search-outline" style={styles.searchWindow} headerRight={<Ionicons name="information-circle-outline" size={16} color={COLORS.text} style={{ opacity: 0.5 }} />}>
+      <MMOWindow title="Database: Search" icon="search-outline" style={styles.searchWindow} headerRight={null}>
         <View style={styles.searchRow}>
             <TextInput
                 style={styles.input}
                 placeholder="Enter card name..."
                 placeholderTextColor={COLORS.textDim}
                 value={query}
-                onChangeText={handleTextChange}
-                onSubmitEditing={handleManualSearch}
+                onChangeText={setQuery}
             />
             <TouchableOpacity
                 style={styles.scanButton}
@@ -91,33 +101,64 @@ export default function SearchScreen() {
                 <Ionicons name="camera-outline" size={20} color={COLORS.text} />
             </TouchableOpacity>
         </View>
-        <View style={styles.filtersRow}>
-             <Text style={styles.filterLabel}>Filter:</Text>
-             <View style={styles.filterBadge}><Text style={styles.filterText}>[All]</Text></View>
-        </View>
       </MMOWindow>
 
       {/* Results Window */}
-      <MMOWindow title={`Results: [${cards.length}]`} icon="list-outline" style={styles.resultsWindow}>
-        {loading ? (
-            <View style={styles.centerContent}>
-                <ActivityIndicator size="small" color={COLORS.electricCyan} />
-                <Text style={styles.loadingText}>Querying Database...</Text>
-            </View>
-        ) : cards.length === 0 ? (
-             <View style={styles.centerContent}>
-                <Text style={styles.emptyText}>No results found.</Text>
-            </View>
-        ) : (
-            <FlatList
-                data={cards}
-                keyExtractor={(item) => item.id.toString()} // Assuming ID is unique enough for search results
-                renderItem={renderItem}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-            />
-        )}
-      </MMOWindow>
+      <View style={{ flex: 1, marginBottom: 60 }}>
+        <MMOWindow title={`Results: [${cards.length}]`} icon="list-outline" style={{ flex: 1 }}>
+            {loading ? (
+                <View style={styles.centerContent}>
+                    <ActivityIndicator size="small" color={COLORS.electricCyan} />
+                    <Text style={styles.loadingText}>Querying Database...</Text>
+                </View>
+            ) : cards.length === 0 ? (
+                <View style={styles.centerContent}>
+                    <Text style={styles.emptyText}>No results found.</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={cards}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
+        </MMOWindow>
+      </View>
+
+      {/* Modal Detail View */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={!!selectedCard}
+        onRequestClose={closeDetail}
+      >
+        <View style={styles.modalContainer}>
+             <View style={styles.modalContent}>
+                {selectedCard && (
+                    <CardDetailView
+                        card={selectedCard}
+                        onClose={closeDetail}
+                        onNavigateToCollection={(c) => {
+                            closeDetail();
+                            // Small timeout to allow modal to close first if needed, though direct nav usually works
+                            setTimeout(() => {
+                                navigation.navigate('AddCard', { card: c });
+                            }, 100);
+                        }}
+                        onNavigateToDeck={(deckId) => {
+                            closeDetail();
+                            setTimeout(() => {
+                                navigation.navigate('DeckDetail', { deckId });
+                            }, 100);
+                        }}
+                        style={{ flex: 1 }}
+                    />
+                )}
+             </View>
+        </View>
+      </Modal>
 
     </View>
   );
@@ -127,7 +168,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    // paddingTop handled by inline style
+    backgroundColor: COLORS.deepVoid,
   },
   searchWindow: {
       marginBottom: 10,
@@ -135,7 +176,6 @@ const styles = StyleSheet.create({
   searchRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 8,
   },
   input: {
       flex: 1,
@@ -154,32 +194,7 @@ const styles = StyleSheet.create({
       justifyContent: 'center',
       alignItems: 'center',
       ...STYLES.bevelOut,
-      backgroundColor: '#ecf0f1',
-  },
-  filtersRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-  },
-  filterLabel: {
-      fontSize: 12,
-      color: COLORS.textDim,
-      marginRight: 5,
-  },
-  filterBadge: {
-      backgroundColor: '#dfe6e9',
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 2,
-      borderWidth: 1,
-      borderColor: '#bdc3c7',
-  },
-  filterText: {
-      fontSize: 10,
-      color: COLORS.text,
-  },
-  resultsWindow: {
-      flex: 1,
-      marginBottom: 60, // Space for command bar
+      backgroundColor: COLORS.windowHeader,
   },
   centerContent: {
       flex: 1,
@@ -204,7 +219,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       paddingVertical: 8,
       borderBottomWidth: 1,
-      borderBottomColor: 'rgba(0,0,0,0.05)',
+      borderBottomColor: COLORS.windowBorderDark,
   },
   imageContainer: {
       width: 40,
@@ -231,4 +246,18 @@ const styles = StyleSheet.create({
       fontSize: 11,
       color: COLORS.textDim,
   },
+  modalContainer: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)', // Dimmed background
+      justifyContent: 'flex-end',
+  },
+  modalContent: {
+      height: '90%', // Slide up to 90% height
+      backgroundColor: COLORS.deepVoid,
+      borderTopLeftRadius: 10,
+      borderTopRightRadius: 10,
+      padding: 10,
+      ...STYLES.bevelOut, // Frame the modal content
+      borderBottomWidth: 0, // No bottom border needed
+  }
 });

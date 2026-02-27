@@ -1,26 +1,26 @@
 export const COLORS = {
-  // MMO Theme
-  deepVoid: '#f0f4f8', // Changed to light airy blue-grey
-  glassBackground: 'rgba(230, 240, 255, 0.85)', // Light translucent pastel blue
-  chromeMist: '#c8d6e5', // Soft blue-grey for borders
-  electricCyan: '#2d98da', // Darker blue for accents/active states
-  cyberMagenta: '#eb3b5a', // Soft red for alerts/actions
-  text: '#2c3e50', // Dark blue-grey for main text
-  textDim: '#7f8fa6', // Muted blue-grey for secondary text
+  // MMO Theme - Juicy Watery Pink
+  deepVoid: '#fff5f9', // Very light airy pink
+  glassBackground: 'rgba(255, 240, 245, 0.85)', // Translucent pale pink
+  chromeMist: '#f3d0df', // Soft pink border
+  electricCyan: '#d63384', // Changed to "Juicy Pink" for accents
+  cyberMagenta: '#e84393', // Red/Alert kept as a vibrant pink/red
+  text: '#5e2a40', // Dark grape/wine for main text
+  textDim: '#9c6b84', // Muted grape for secondary text
 
   // Specific UI Colors
-  windowHeader: '#dfe6e9', // Fallback
-  headerGradientStart: '#dae9f5', // Light blue top
-  headerGradientEnd: '#b0cbe8',   // Slightly darker blue bottom
+  windowHeader: '#fadadd', // Fallback
+  headerGradientStart: '#fceef4', // Light pink top
+  headerGradientEnd: '#f4bdd0',   // Deeper pink bottom
 
-  windowBorderLight: '#ffffff', // Bevel highlight
-  windowBorderDark: '#bdc3c7', // Bevel shadow
+  windowBorderLight: '#ffffff', // Highlight
+  windowBorderDark: '#d9a7b9', // Shadow (dusty pink)
   inputBackground: '#ffffff',
-  slotBackground: 'rgba(255, 255, 255, 0.5)',
+  slotBackground: 'rgba(255, 255, 255, 0.6)',
 
   // Retro Status Colors
-  success: '#20bf6b',
-  warning: '#fa8231',
+  success: '#6ab04c', // Kept similar but softer
+  warning: '#f0932b',
   error: '#eb3b5a',
 };
 
@@ -39,25 +39,25 @@ export const STYLES = {
     borderBottomWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
-    borderRightColor: '#bdc3c7', // Darker shadow
-    borderBottomColor: '#bdc3c7',
-    backgroundColor: '#ecf0f1',
+    borderRightColor: '#d9a7b9', // Darker shadow (dusty pink)
+    borderBottomColor: '#d9a7b9',
+    backgroundColor: '#fff0f5', // Lavender blush
   },
   bevelIn: {
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderTopColor: '#bdc3c7', // Inner shadow top
-    borderLeftColor: '#bdc3c7', // Inner shadow left
+    borderTopColor: '#d9a7b9', // Inner shadow top
+    borderLeftColor: '#d9a7b9', // Inner shadow left
     borderRightColor: '#ffffff',
     borderBottomColor: '#ffffff',
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.03)',
   },
   windowHeader: {
     // backgroundColor removed here as it will be handled by LinearGradient
     borderBottomWidth: 1,
-    borderBottomColor: '#7f9db9', // Blueish border for header
+    borderBottomColor: '#d98fab', // Pinkish border for header
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -70,7 +70,7 @@ export const STYLES = {
   },
   glow: {
     // Subtle shadow instead of neon glow
-    shadowColor: '#2d98da',
+    shadowColor: '#d63384',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,

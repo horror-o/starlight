@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderTopWidth: 1,
     borderTopColor: COLORS.chromeMist,
-    backgroundColor: 'rgba(236, 240, 241, 0.9)', // Light grey background
+    backgroundColor: 'rgba(255, 245, 249, 0.9)', // Light pink background
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

@@ -38,20 +38,10 @@ export const MMOWindow: React.FC<MMOWindowProps> = ({
 
         <View style={styles.headerControls}>
           {headerRight}
-          {onClose ? (
+          {onClose && (
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={14} color={COLORS.text} />
             </TouchableOpacity>
-          ) : (
-            // If no onClose, show info icon or nothing.
-            // Based on requirements: "remove 'X' buttons; replace with an 'Information' icon for context, or remove entirely"
-            // We'll show an info icon by default if no onClose is provided, but only for certain windows?
-            // Actually, let's just leave it empty if no onClose, unless we decide to add a help tooltip later.
-            // But requirement said "replace with an 'Information' icon". Let's add a small info icon that doesn't do anything for now, purely aesthetic?
-            // Or better yet, just leave it clean if it's not closable.
-            // Wait, "replace with an 'Information' icon for context... or remove entirely".
-            // Let's remove entirely for now to keep it clean, as "Information" usually implies a modal or tooltip.
-            null
           )}
         </View>
       </LinearGradient>
@@ -59,6 +49,13 @@ export const MMOWindow: React.FC<MMOWindowProps> = ({
       {/* Content Area */}
       <View style={styles.content}>
         {children}
+      </View>
+
+      {/* Retro Resize Grip (Aesthetic Only) */}
+      <View style={styles.resizeGripContainer} pointerEvents="none">
+        <View style={[styles.gripLine, { right: 0, bottom: 0, width: 6 }]} />
+        <View style={[styles.gripLine, { right: 2, bottom: 2, width: 10 }]} />
+        <View style={[styles.gripLine, { right: 4, bottom: 4, width: 14 }]} />
       </View>
     </View>
   );
@@ -75,6 +72,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    position: 'relative', // For resize grip absolute positioning
+    paddingBottom: 2, // Ensure content doesn't overlap grip too much if tight
   },
   titleBar: {
     ...STYLES.windowHeader,
@@ -106,12 +105,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.3)', // Slightly translucent button
     borderWidth: 1,
-    borderColor: '#bdc3c7',
+    borderColor: COLORS.windowBorderDark,
     borderRadius: 2,
     marginLeft: 8,
   },
   content: {
     padding: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.4)', // Slightly lighter content area
+    flex: 1, // Allow content to expand
   },
+  resizeGripContainer: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 10,
+    height: 10,
+    zIndex: 10,
+  },
+  gripLine: {
+    position: 'absolute',
+    height: 1.5,
+    backgroundColor: COLORS.windowBorderDark,
+    transform: [{ rotate: '-45deg' }],
+    opacity: 0.6,
+  }
 });
