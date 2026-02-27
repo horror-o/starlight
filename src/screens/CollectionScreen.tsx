@@ -145,7 +145,7 @@ export default function CollectionScreen() {
         ) : (
             <FlatList
             data={collection}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => `${item.id}-${index}`} // Fix key uniqueness
             renderItem={renderItem}
             numColumns={5} // 5 slots wide like classic MMO
             contentContainerStyle={styles.listContent}
@@ -162,6 +162,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+    paddingTop: 15, // Additional top padding for status bar safety
   },
   toolsWindow: {
       marginBottom: 10,

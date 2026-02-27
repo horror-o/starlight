@@ -110,7 +110,7 @@ export default function SearchScreen() {
         ) : (
             <FlatList
                 data={cards}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.id.toString()} // Assuming ID is unique enough for search results
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
@@ -126,6 +126,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
+    paddingTop: 15,
   },
   searchWindow: {
       marginBottom: 10,
