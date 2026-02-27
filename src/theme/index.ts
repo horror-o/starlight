@@ -9,7 +9,10 @@ export const COLORS = {
   textDim: '#7f8fa6', // Muted blue-grey for secondary text
 
   // Specific UI Colors
-  windowHeader: '#dfe6e9', // Light grey for window headers
+  windowHeader: '#dfe6e9', // Fallback
+  headerGradientStart: '#dae9f5', // Light blue top
+  headerGradientEnd: '#b0cbe8',   // Slightly darker blue bottom
+
   windowBorderLight: '#ffffff', // Bevel highlight
   windowBorderDark: '#bdc3c7', // Bevel shadow
   inputBackground: '#ffffff',
@@ -52,9 +55,9 @@ export const STYLES = {
     backgroundColor: 'rgba(0,0,0,0.05)',
   },
   windowHeader: {
-    backgroundColor: '#dcdde1', // Gradient-like solid color
+    // backgroundColor removed here as it will be handled by LinearGradient
     borderBottomWidth: 1,
-    borderBottomColor: '#bdc3c7',
+    borderBottomColor: '#7f9db9', // Blueish border for header
     paddingHorizontal: 8,
     paddingVertical: 4,
   },

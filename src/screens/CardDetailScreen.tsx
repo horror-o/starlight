@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, FlatList, TextInput } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { addToWishlist } from '../services/wishlist';
 import { getDecks, addCardToDeck, createDeck } from '../services/storage';
@@ -20,6 +21,7 @@ export default function CardDetailScreen() {
   const route = useRoute<CardDetailScreenRouteProp>();
   const { card } = route.params;
   const navigation = useNavigation<CardDetailNavigationProp>();
+  const insets = useSafeAreaInsets();
   const [showSuccess, setShowSuccess] = useState(false);
   const [successType, setSuccessType] = useState<'wishlist' | 'deck' | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
@@ -130,7 +132,7 @@ export default function CardDetailScreen() {
   );
 
   return (
-    <View style={styles.screenContainer}>
+    <View style={[styles.screenContainer, { paddingTop: insets.top + 10 }]}>
         {showSuccess && (
             <SuccessView
                 message={successMessage}
@@ -281,7 +283,7 @@ export default function CardDetailScreen() {
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
-    paddingTop: 10,
+    // paddingTop handled by inline style
   },
   scrollContainer: {
     paddingHorizontal: 10,

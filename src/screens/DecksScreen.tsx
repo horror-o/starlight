@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Modal, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getDecks, createDeck, deleteDeck } from '../services/storage';
@@ -18,6 +18,7 @@ export default function DecksScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [newDeckName, setNewDeckName] = useState('');
   const navigation = useNavigation<DecksScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const fetchDecks = async () => {
     const data = await getDecks();
@@ -97,8 +98,8 @@ export default function DecksScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <MMOWindow title="Deck List" icon="layers-outline" style={styles.window}>
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
+      <MMOWindow title="Deck List" icon="layers-outline" style={styles.window} headerRight={<Ionicons name="information-circle-outline" size={16} color={COLORS.text} style={{ opacity: 0.5 }} />}>
         <FlatList
             data={decks}
             keyExtractor={(item) => item.id}
@@ -151,7 +152,7 @@ export default function DecksScreen() {
           </MMOWindow>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 15,
+    // paddingTop handled by inline style
   },
   window: {
       flex: 1,

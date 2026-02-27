@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { searchCards, Card } from '../services/api';
 import { sortSearchResults } from '../utils/search';
@@ -19,6 +19,7 @@ export default function SearchScreen() {
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<SearchScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
 
   // Create a debounced search function
   const debouncedSearch = useCallback(
@@ -70,10 +71,10 @@ export default function SearchScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       
       {/* Search Bar Window */}
-      <MMOWindow title="Database: Search" icon="search-outline" style={styles.searchWindow}>
+      <MMOWindow title="Database: Search" icon="search-outline" style={styles.searchWindow} headerRight={<Ionicons name="information-circle-outline" size={16} color={COLORS.text} style={{ opacity: 0.5 }} />}>
         <View style={styles.searchRow}>
             <TextInput
                 style={styles.input}
@@ -118,7 +119,7 @@ export default function SearchScreen() {
         )}
       </MMOWindow>
 
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 15,
+    // paddingTop handled by inline style
   },
   searchWindow: {
       marginBottom: 10,

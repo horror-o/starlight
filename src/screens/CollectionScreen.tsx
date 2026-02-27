@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getCollection, removeCollectionItem } from '../services/storage';
 import { exportCollectionToCSV, importCollectionFromCSV } from '../services/csv';
@@ -19,6 +19,7 @@ export default function CollectionScreen() {
   const [collection, setCollection] = useState<CollectionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<CollectionScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const fetchCollection = async () => {
     const data = await getCollection();
@@ -116,10 +117,10 @@ export default function CollectionScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
 
       {/* Tools Window */}
-      <MMOWindow title="Collection: Tools" style={styles.toolsWindow} icon="construct-outline">
+      <MMOWindow title="Collection: Tools" style={styles.toolsWindow} icon="construct-outline" headerRight={<Ionicons name="information-circle-outline" size={16} color={COLORS.text} style={{ opacity: 0.5 }} />}>
         <View style={styles.actionsBar}>
             <TouchableOpacity style={styles.actionButton} onPress={handleExport}>
                 <Ionicons name="download-outline" size={16} color={COLORS.text} />
@@ -145,7 +146,7 @@ export default function CollectionScreen() {
         ) : (
             <FlatList
             data={collection}
-            keyExtractor={(item, index) => `${item.id}-${index}`} // Fix key uniqueness
+            keyExtractor={(item, index) => `${item.id}_collection_${index}`} // Fix key uniqueness
             renderItem={renderItem}
             numColumns={5} // 5 slots wide like classic MMO
             contentContainerStyle={styles.listContent}
@@ -154,7 +155,7 @@ export default function CollectionScreen() {
         )}
       </MMOWindow>
 
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop: 15, // Additional top padding for status bar safety
+    // paddingTop handled by inline style with insets
   },
   toolsWindow: {
       marginBottom: 10,

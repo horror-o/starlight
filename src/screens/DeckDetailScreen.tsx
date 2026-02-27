@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Alert, TextInput, ActivityIndicator, Platform, Keyboard, LayoutAnimation, UIManager, BackHandler, Dimensions } from 'react-native';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getDecks, removeCardFromDeck, addCardToDeck } from '../services/storage';
@@ -26,6 +27,7 @@ export default function DeckDetailScreen() {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [activeTab, setActiveTab] = useState<'main' | 'extra' | 'side'>('main');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const insets = useSafeAreaInsets();
   
   // Search state
   const [query, setQuery] = useState('');
@@ -151,8 +153,6 @@ export default function DeckDetailScreen() {
             quantity={1}
             onPress={() => navigation.navigate('CardDetail', { card: item })}
         />
-        // Note: For deck builder, we might want a way to remove cards easily.
-        // Ideally, long press or a separate "edit mode". For now, let's add a small 'x' overlay or handle on long press.
       );
   };
 
@@ -191,7 +191,7 @@ export default function DeckDetailScreen() {
   const currentCards = activeTab === 'main' ? deck.mainDeck : activeTab === 'extra' ? deck.extraDeck : deck.sideDeck;
 
   return (
-    <View style={styles.container} onLayout={onLayout}>
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]} onLayout={onLayout}>
       <View style={[styles.contentContainer, isWide && styles.wideContainer]}>
 
       {/* Top/Left Tray: Deck View */}
@@ -231,7 +231,7 @@ export default function DeckDetailScreen() {
                 {/* Grid */}
                 <FlatList
                     data={currentCards}
-                    keyExtractor={(item, index) => `${item.id}-${index}`}
+                    keyExtractor={(item, index) => `${item.id}_${activeTab}_${index}`}
                     renderItem={({ item, index }) => (
                         <View style={{ position: 'relative' }}>
                              {renderDeckCard({ item, index })}
