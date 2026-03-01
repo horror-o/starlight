@@ -36,6 +36,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function TabNavigator() {
   return (
     <Tab.Navigator
+      id="TabNavigator"
       tabBar={(props) => <MMOCommandBar {...props} />}
       screenOptions={{
         headerShown: false,
@@ -63,6 +64,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        id="StackNavigator"
         screenOptions={{
             // Remove default headers to use custom MMOWindow headers where appropriate
             // or style them to match the theme if we keep them for stack screens
