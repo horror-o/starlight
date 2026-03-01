@@ -206,14 +206,10 @@ export const CardDetailView: React.FC<CardDetailViewProps> = ({
 
         </ScrollView>
 
-        <Modal
-            animationType="fade"
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
-        >
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
+        {modalVisible && (
+            <View style={styles.modalOverlay} pointerEvents="box-none">
+                <View style={styles.modalOverlayBackground} pointerEvents="auto" />
+                <View style={styles.modalContent} pointerEvents="box-none">
                     <MMOWindow title="Select Deck" icon="albums-outline" onClose={() => setModalVisible(false)} style={styles.modalWindow}>
                         {decks.length === 0 ? (
                             <View style={styles.emptyDecks}>
@@ -245,7 +241,7 @@ export const CardDetailView: React.FC<CardDetailViewProps> = ({
                     </MMOWindow>
                 </View>
             </View>
-        </Modal>
+        )}
     </View>
   );
 };
@@ -371,14 +367,19 @@ const styles = StyleSheet.create({
       textAlign: 'center'
   },
   modalOverlay: {
-      flex: 1,
+      ...StyleSheet.absoluteFillObject,
       justifyContent: 'center',
       alignItems: 'center',
+      zIndex: 100,
+  },
+  modalOverlayBackground: {
+      ...StyleSheet.absoluteFillObject,
       backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
       width: '100%',
       alignItems: 'center',
+      zIndex: 101,
   },
   modalWindow: {
       width: '85%',

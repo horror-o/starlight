@@ -180,13 +180,13 @@ const styles = StyleSheet.create({
   actionButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#ecf0f1',
+      backgroundColor: COLORS.chromeMist, // Softer pink instead of light grey
       paddingVertical: 6,
       paddingHorizontal: 12,
       borderRadius: 4,
       marginRight: 10,
       borderWidth: 1,
-      borderColor: '#bdc3c7',
+      borderColor: COLORS.windowBorderDark,
   },
   actionButtonText: {
       color: COLORS.text,

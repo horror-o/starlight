@@ -83,7 +83,7 @@ export default function SearchScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
-      
+
       {/* Search Bar Window */}
       <MMOWindow title="Database: Search" icon="search-outline" style={styles.searchWindow} headerRight={null}>
         <View style={styles.searchRow}>
@@ -105,13 +105,15 @@ export default function SearchScreen() {
 
       {/* Results Window */}
       <View style={{ flex: 1, marginBottom: 60 }}>
-        <MMOWindow title={`Results: [${cards.length}]`} icon="list-outline" style={{ flex: 1 }}>
-            {loading ? (
-                <View style={styles.centerContent}>
-                    <ActivityIndicator size="small" color={COLORS.electricCyan} />
-                    <Text style={styles.loadingText}>Querying Database...</Text>
-                </View>
-            ) : cards.length === 0 ? (
+        <MMOWindow
+            title={`Results: [${cards.length}]`}
+            icon="list-outline"
+            style={{ flex: 1 }}
+            headerRight={
+                loading ? <ActivityIndicator size="small" color={COLORS.text} style={{ marginRight: 8 }} /> : null
+            }
+        >
+            {cards.length === 0 && !loading ? (
                 <View style={styles.centerContent}>
                     <Text style={styles.emptyText}>No results found.</Text>
                 </View>

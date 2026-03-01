@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
   content: {
     padding: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.4)', // Slightly lighter content area
-    flex: 1, // Allow content to expand
   },
   resizeGripContainer: {
     position: 'absolute',
