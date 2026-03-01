@@ -1,9 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import { Buffer } from 'buffer'; // Need buffer for base64 decoding
-import { getCardById } from './api';
+import { getCardById, Card } from './api';
 import { createDeck, addCardToDeck } from './storage';
-import { Deck, Card } from '../types';
+import { Deck } from '../types';
 
 /**
  * Parses a standard YDK file string.
@@ -148,7 +148,7 @@ export const importDeckFromYDKFile = async (deckName: string): Promise<Deck | nu
         if (result.canceled) return null;
 
         const fileUri = result.assets[0].uri;
-        const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
+        const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: 'utf8' });
 
         const parsed = parseYDK(fileContent);
         return await importDeckFromIDs(deckName, parsed);

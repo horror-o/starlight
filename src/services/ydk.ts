@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { getCollection, saveCollectionItem } from './storage';
+import { getCollection, addCollectionItem } from './storage';
 import { getCardById } from './api';
 import { CollectionItem } from '../types';
 
@@ -40,8 +40,9 @@ export const exportCollectionToYDK = async () => {
 
         ydkContent += '#extra\n!side\n';
 
-        const fileUri = `${FileSystem.documentDirectory}collection_export.ydk`;
-        await FileSystem.writeAsStringAsync(fileUri, ydkContent, { encoding: FileSystem.EncodingType.UTF8 });
+        // @ts-ignore - expo-file-system types are sometimes incomplete for web
+        const fileUri = `${FileSystem.documentDirectory || FileSystem.cacheDirectory || 'file:///'}collection_export.ydk`;
+        await FileSystem.writeAsStringAsync(fileUri, ydkContent, { encoding: 'utf8' });
 
         if (await Sharing.isAvailableAsync()) {
             await Sharing.shareAsync(fileUri, {
@@ -71,7 +72,7 @@ export const importCollectionFromYDK = async (): Promise<number> => {
         }
 
         const fileUri = result.assets[0].uri;
-        const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.UTF8 });
+        const fileContent = await FileSystem.readAsStringAsync(fileUri, { encoding: 'utf8' });
 
         const lines = fileContent.split('\n');
         let importCount = 0;
@@ -96,7 +97,7 @@ export const importCollectionFromYDK = async (): Promise<number> => {
                         quantity: 1,
                         dateAdded: new Date().toISOString()
                     };
-                    await saveCollectionItem(newItem);
+                    await addCollectionItem(newItem);
                     importCount++;
                 }
             }
