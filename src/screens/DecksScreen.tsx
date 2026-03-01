@@ -1,13 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Modal, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getDecks, createDeck, deleteDeck } from '../services/storage';
 import { Deck } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, STYLES, FONTS } from '../theme';
+import { MMOWindow } from '../components/MMOWindow';
+import { InventorySlot } from '../components/InventorySlot';
 
 type DecksScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Tabs'>;
 
@@ -16,6 +18,7 @@ export default function DecksScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [newDeckName, setNewDeckName] = useState('');
   const navigation = useNavigation<DecksScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
 
   const fetchDecks = async () => {
     const data = await getDecks();
@@ -68,43 +71,48 @@ export default function DecksScreen() {
   };
 
   const renderItem = ({ item }: { item: Deck }) => (
-    <View style={styles.deckItem}>
-      <TouchableOpacity 
-        style={styles.deckContent}
-        onPress={() => navigation.navigate('DeckDetail', { deckId: item.id })}
-      >
-        <View style={styles.deckIcon}>
-            <Ionicons name="layers" size={24} color={COLORS.electricCyan} />
-        </View>
-        <View style={styles.deckInfo}>
-            <Text style={styles.deckName}>{item.name}</Text>
-            <Text style={styles.deckCount}>
-                Main: {item.mainDeck.length} | Extra: {item.extraDeck.length} | Side: {item.sideDeck.length}
-            </Text>
-            <Text style={styles.deckDate}>Last modified: {new Date(item.dateModified).toLocaleDateString()}</Text>
-        </View>
-      </TouchableOpacity>
-      
-      <TouchableOpacity onPress={() => handleDeleteDeck(item.id)} style={styles.deleteButton} accessibilityLabel={`Delete ${item.name}`} accessibilityRole="button">
-        <Ionicons name="trash-outline" size={24} color={COLORS.cyberMagenta} />
-      </TouchableOpacity>
+    <View style={styles.deckItemWrapper}>
+        <TouchableOpacity
+            style={styles.deckItem}
+            onPress={() => navigation.navigate('DeckDetail', { deckId: item.id })}
+        >
+            <View style={styles.deckIcon}>
+                <InventorySlot image={undefined} quantity={0} empty={false} />
+                <View style={styles.iconOverlay}>
+                    <Ionicons name="layers" size={24} color={COLORS.electricCyan} />
+                </View>
+            </View>
+            <View style={styles.deckInfo}>
+                <Text style={styles.deckName}>{item.name}</Text>
+                <Text style={styles.deckCount}>
+                    M: {item.mainDeck.length} | E: {item.extraDeck.length} | S: {item.sideDeck.length}
+                </Text>
+                <Text style={styles.deckDate}>{new Date(item.dateModified).toLocaleDateString()}</Text>
+            </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => handleDeleteDeck(item.id)} style={styles.deleteButton} accessibilityLabel={`Delete ${item.name}`} accessibilityRole="button">
+            <Ionicons name="trash-outline" size={16} color={COLORS.cyberMagenta} />
+        </TouchableOpacity>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <FlatList
-        data={decks}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No decks created yet.</Text>
-            <Text style={styles.emptySubtext}>Create a deck to start building!</Text>
-          </View>
-        }
-      />
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
+      <MMOWindow title="Deck List" icon="layers-outline" style={styles.window} headerRight={<Ionicons name="information-circle-outline" size={16} color={COLORS.text} style={{ opacity: 0.5 }} />}>
+        <FlatList
+            data={decks}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No decks created yet.</Text>
+                <Text style={styles.emptySubtext}>Create a deck to start building!</Text>
+            </View>
+            }
+        />
+      </MMOWindow>
 
       <TouchableOpacity 
         style={styles.fab}
@@ -116,191 +124,168 @@ export default function DecksScreen() {
       </TouchableOpacity>
 
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Deck</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Deck Name"
-              placeholderTextColor={COLORS.textDim}
-              value={newDeckName}
-              onChangeText={setNewDeckName}
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.createButton]}
-                onPress={handleCreateDeck}
-                accessibilityLabel="Confirm Create Deck"
-                accessibilityRole="button"
-              >
-                <Text style={styles.createButtonText}>Create</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+           <MMOWindow title="Create New Deck" icon="add-circle-outline" onClose={() => setModalVisible(false)} style={styles.modalWindow}>
+                <View style={styles.modalContent}>
+                    <TextInput
+                    style={styles.input}
+                    placeholder="Enter Deck Name..."
+                    placeholderTextColor={COLORS.textDim}
+                    value={newDeckName}
+                    onChangeText={setNewDeckName}
+                    autoFocus
+                    />
+                    <TouchableOpacity
+                        style={styles.createButton}
+                        onPress={handleCreateDeck}
+                        accessibilityLabel="Confirm Create Deck"
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.createButtonText}>Create Deck</Text>
+                    </TouchableOpacity>
+                </View>
+          </MMOWindow>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.deepVoid,
+    padding: 10,
+    // paddingTop handled by inline style
+  },
+  window: {
+      flex: 1,
+      marginBottom: 60,
   },
   listContent: {
-    padding: 10,
-    paddingBottom: 80, // Space for FAB
+    padding: 5,
+  },
+  deckItemWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 4,
+    padding: 5,
   },
   deckItem: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.glassBackground,
-    marginBottom: 10,
-    borderRadius: 8,
-    overflow: 'hidden',
-    alignItems: 'center',
-    padding: 5,
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
-  },
-  deckContent: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
   },
   deckIcon: {
-      marginRight: 15,
-      backgroundColor: 'rgba(10, 189, 198, 0.1)',
-      padding: 10,
-      borderRadius: 20,
+      marginRight: 10,
+      position: 'relative',
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  iconOverlay: {
+      position: 'absolute',
   },
   deckInfo: {
     flex: 1,
   },
   deckName: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: FONTS.header,
     color: COLORS.text,
-    letterSpacing: 1,
+    fontWeight: 'bold',
   },
   deckCount: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: FONTS.body,
     color: COLORS.textDim,
-    marginTop: 2,
   },
   deckDate: {
     fontSize: 10,
     color: COLORS.textDim,
-    marginTop: 4,
     fontFamily: FONTS.body,
   },
   deleteButton: {
-    padding: 15,
+    padding: 10,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+    ...STYLES.bevelOut,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 100,
+    marginTop: 50,
   },
   emptyText: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 5,
     color: COLORS.text,
     fontFamily: FONTS.header,
   },
   emptySubtext: {
-    fontSize: 16,
+    fontSize: 12,
     color: COLORS.textDim,
     fontFamily: FONTS.body,
   },
   fab: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 80,
     right: 20,
     backgroundColor: COLORS.cyberMagenta,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.cyberMagenta,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
+    ...STYLES.bevelOut,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
     elevation: 4,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalWindow: {
+    width: '85%',
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: COLORS.deepVoid,
-    borderRadius: 10,
-    padding: 20,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontFamily: FONTS.header,
-    marginBottom: 15,
-    textAlign: 'center',
-    color: COLORS.text,
+      paddingVertical: 10,
   },
   input: {
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    ...STYLES.bevelIn,
+    backgroundColor: '#fff',
+    padding: 8,
+    marginBottom: 15,
     color: COLORS.text,
     fontFamily: FONTS.body,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginHorizontal: 5,
-  },
-  cancelButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   createButton: {
     backgroundColor: COLORS.electricCyan,
-  },
-  cancelButtonText: {
-    color: COLORS.textDim,
-    fontWeight: 'bold',
-    fontFamily: FONTS.body,
+    padding: 10,
+    alignItems: 'center',
+    borderRadius: 4,
+    ...STYLES.bevelOut,
   },
   createButtonText: {
-    color: '#000',
+    color: '#fff',
     fontWeight: 'bold',
     fontFamily: FONTS.body,
   },

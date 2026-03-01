@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { searchCards, Card } from '../services/api';
 import { sortSearchResults } from '../utils/search';
@@ -10,46 +10,59 @@ import { COLORS, STYLES, FONTS } from '../theme';
 import { BanlistIcon } from '../components/BanlistIcon';
 import debounce from 'lodash.debounce';
 import { Ionicons } from '@expo/vector-icons';
+import { MMOWindow } from '../components/MMOWindow';
+import { CardDetailView } from '../components/CardDetailView';
 
-type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Tabs'>;
+type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation<SearchScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
+
+  // Modal state
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   // Create a debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (searchQuery: string) => {
-      if (!searchQuery) {
-        setCards([]);
-        return;
-      }
-      setLoading(true);
-      const results = await searchCards(searchQuery);
-      const sortedResults = sortSearchResults(results, searchQuery);
-      setCards(sortedResults);
-      setLoading(false);
-    }, 500),
-    []
-  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSearch = debounce(async (searchQuery: string) => {
+    if (!searchQuery) {
+      setCards([]);
+      return;
+    }
+    setLoading(true);
+    try {
+        const results = await searchCards(searchQuery);
+        // Only update if the query matches current input to avoid race conditions
+        setCards(results);
+    } catch (e) {
+        console.error(e);
+    } finally {
+        setLoading(false);
+    }
+  }, 500);
 
-  const handleTextChange = (text: string) => {
-    setQuery(text);
-    debouncedSearch(text);
+  useEffect(() => {
+      debouncedSearch(query);
+      return () => {
+          debouncedSearch.cancel();
+      }
+  }, [query, debouncedSearch]);
+
+  const handleCardPress = (card: Card) => {
+      setSelectedCard(card);
   };
 
-  const handleManualSearch = () => {
-    // If debounced search hasn't fired yet or to force a search
-    debouncedSearch(query);
-    debouncedSearch.flush(); // Execute immediately
+  const closeDetail = () => {
+      setSelectedCard(null);
   };
 
   const renderItem = ({ item }: { item: Card }) => (
     <TouchableOpacity 
       style={styles.cardItem} 
-      onPress={() => navigation.navigate('CardDetail', { card: item })}
+      onPress={() => handleCardPress(item)}
     >
       <View style={styles.imageContainer}>
         <Image 
@@ -62,123 +75,189 @@ export default function SearchScreen() {
       </View>
       <View style={styles.cardInfo}>
         <Text style={styles.cardName}>{item.name}</Text>
-        <Text style={styles.cardType}>{item.type}</Text>
+        <Text style={styles.cardType}>[{item.type}]</Text>
       </View>
+      <Ionicons name="chevron-forward" size={16} color={COLORS.textDim} />
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Search for a card..."
-          value={query}
-          onChangeText={handleTextChange}
-          onSubmitEditing={handleManualSearch}
-        />
-        <TouchableOpacity 
-            style={styles.scanButton} 
-            onPress={() => navigation.navigate('ScanCard')}
-            accessibilityLabel="Scan Card Button"
-            accessibilityRole="button"
-        >
-            <Ionicons name="camera-outline" size={24} color={COLORS.electricCyan} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleManualSearch} accessibilityRole="button" accessibilityLabel="Search Button">
-            <Text style={styles.buttonText}>Search</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       
-      {loading ? (
-        <ActivityIndicator size="large" color={COLORS.electricCyan} style={{ marginTop: 20 }} />
-      ) : (
-        <FlatList
-          data={cards}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-        />
-      )}
-    </SafeAreaView>
+      {/* Search Bar Window */}
+      <MMOWindow title="Database: Search" icon="search-outline" style={styles.searchWindow} headerRight={null}>
+        <View style={styles.searchRow}>
+            <TextInput
+                style={styles.input}
+                placeholder="Enter card name..."
+                placeholderTextColor={COLORS.textDim}
+                value={query}
+                onChangeText={setQuery}
+            />
+            <TouchableOpacity
+                style={styles.scanButton}
+                onPress={() => navigation.navigate('ScanCard')}
+            >
+                <Ionicons name="camera-outline" size={20} color={COLORS.text} />
+            </TouchableOpacity>
+        </View>
+      </MMOWindow>
+
+      {/* Results Window */}
+      <View style={{ flex: 1, marginBottom: 60 }}>
+        <MMOWindow title={`Results: [${cards.length}]`} icon="list-outline" style={{ flex: 1 }}>
+            {loading ? (
+                <View style={styles.centerContent}>
+                    <ActivityIndicator size="small" color={COLORS.electricCyan} />
+                    <Text style={styles.loadingText}>Querying Database...</Text>
+                </View>
+            ) : cards.length === 0 ? (
+                <View style={styles.centerContent}>
+                    <Text style={styles.emptyText}>No results found.</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={cards}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
+        </MMOWindow>
+      </View>
+
+      {/* Modal Detail View */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={!!selectedCard}
+        onRequestClose={closeDetail}
+      >
+        <View style={styles.modalContainer}>
+             <View style={styles.modalContent}>
+                {selectedCard && (
+                    <CardDetailView
+                        card={selectedCard}
+                        onClose={closeDetail}
+                        onNavigateToCollection={(c) => {
+                            closeDetail();
+                            // Small timeout to allow modal to close first if needed, though direct nav usually works
+                            setTimeout(() => {
+                                navigation.navigate('AddCard', { card: c });
+                            }, 100);
+                        }}
+                        onNavigateToDeck={(deckId) => {
+                            closeDetail();
+                            setTimeout(() => {
+                                navigation.navigate('DeckDetail', { deckId });
+                            }, 100);
+                        }}
+                        style={{ flex: 1 }}
+                    />
+                )}
+             </View>
+        </View>
+      </Modal>
+
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 10,
     backgroundColor: COLORS.deepVoid,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    padding: 10,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
+  searchWindow: {
+      marginBottom: 10,
+  },
+  searchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
   },
   input: {
-    flex: 1,
-    height: 40,
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    color: COLORS.text,
-    fontFamily: FONTS.body,
-  },
-  button: {
-    backgroundColor: 'rgba(10, 189, 198, 0.2)',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.electricCyan,
-  },
-  buttonText: {
-    color: COLORS.electricCyan,
-    fontWeight: 'bold',
-    fontFamily: FONTS.header,
-    fontSize: 12,
+      flex: 1,
+      height: 36,
+      ...STYLES.bevelIn, // Inset look for input
+      backgroundColor: '#fff',
+      paddingHorizontal: 10,
+      marginRight: 8,
+      fontFamily: FONTS.body,
+      fontSize: 14,
+      color: COLORS.text,
   },
   scanButton: {
-      padding: 8,
-      marginRight: 10,
+      width: 36,
+      height: 36,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...STYLES.bevelOut,
+      backgroundColor: COLORS.windowHeader,
+  },
+  centerContent: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+  },
+  loadingText: {
+      marginTop: 10,
+      color: COLORS.textDim,
+      fontSize: 12,
+  },
+  emptyText: {
+      color: COLORS.textDim,
+      fontStyle: 'italic',
   },
   listContent: {
-    padding: 10,
+      paddingBottom: 10,
   },
   cardItem: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.glassBackground,
-    marginBottom: 10,
-    borderRadius: 8,
-    overflow: 'hidden',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: COLORS.chromeMist,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: COLORS.windowBorderDark,
   },
   imageContainer: {
-      position: 'relative',
+      width: 40,
+      height: 58,
       marginRight: 10,
+      ...STYLES.bevelIn,
+      padding: 1,
+      backgroundColor: '#fff',
   },
   cardImage: {
-    width: 60,
-    height: 87,
+      width: '100%',
+      height: '100%',
   },
   cardInfo: {
-    flex: 1,
-    justifyContent: 'center',
+      flex: 1,
   },
   cardName: {
-    fontSize: 16,
-    fontFamily: FONTS.header,
-    color: COLORS.text,
-    marginBottom: 4,
+      fontSize: 14,
+      fontFamily: FONTS.header,
+      color: COLORS.text,
+      marginBottom: 2,
   },
   cardType: {
-    fontSize: 12,
-    fontFamily: FONTS.body,
-    color: COLORS.textDim,
+      fontSize: 11,
+      color: COLORS.textDim,
   },
+  modalContainer: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)', // Dimmed background
+      justifyContent: 'flex-end',
+  },
+  modalContent: {
+      height: '90%', // Slide up to 90% height
+      backgroundColor: COLORS.deepVoid,
+      borderTopLeftRadius: 10,
+      borderTopRightRadius: 10,
+      padding: 10,
+      ...STYLES.bevelOut, // Frame the modal content
+      borderBottomWidth: 0, // No bottom border needed
+  }
 });

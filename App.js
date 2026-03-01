@@ -3,6 +3,7 @@ import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useFonts, Orbitron_700Bold } from '@expo-google-fonts/orbitron';
 import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from './src/theme';
 
 export default function App() {
@@ -21,20 +22,23 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#eff3f6', '#dbe4eb', '#c5d3df']} // Soft pastel blue/grey gradient
+      style={styles.container}
+    >
       <AppNavigator />
-      <StatusBar style="light" />
-    </View>
+      <StatusBar style="dark" />
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.deepVoid,
   },
   loading: {
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.deepVoid,
   },
 });
