@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getDecks, createDeck, deleteDeck } from '../services/storage';
+import { importDeckFromYDKFile, parseYDKE, importDeckFromIDs } from '../services/deckImport';
 import { Deck } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, STYLES, FONTS } from '../theme';
@@ -16,7 +17,10 @@ type DecksScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, '
 export default function DecksScreen() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
+  const [importMode, setImportMode] = useState<'create' | 'ydk' | 'ydke'>('create');
   const [newDeckName, setNewDeckName] = useState('');
+  const [ydkeCode, setYdkeCode] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
   const navigation = useNavigation<DecksScreenNavigationProp>();
   const insets = useSafeAreaInsets();
 
@@ -31,6 +35,13 @@ export default function DecksScreen() {
     }, [])
   );
 
+  const handleOpenModal = (mode: 'create' | 'ydk' | 'ydke') => {
+      setImportMode(mode);
+      setNewDeckName('');
+      setYdkeCode('');
+      setModalVisible(true);
+  }
+
   const handleCreateDeck = async () => {
     const deckName = newDeckName.trim() || 'New Deck';
     const newDeck = await createDeck(deckName);
@@ -38,11 +49,43 @@ export default function DecksScreen() {
       setNewDeckName('');
       setModalVisible(false);
       fetchDecks();
-      // Optionally navigate to the new deck immediately
-      // navigation.navigate('DeckDetail', { deck: newDeck });
     } else {
       Alert.alert('Error', 'Failed to create deck');
     }
+  };
+
+  const handleImportYDK = async () => {
+      const deckName = newDeckName.trim() || 'Imported YDK Deck';
+      setIsImporting(true);
+      const newDeck = await importDeckFromYDKFile(deckName);
+      setIsImporting(false);
+      if (newDeck) {
+          setNewDeckName('');
+          setModalVisible(false);
+          fetchDecks();
+      } else {
+          Alert.alert('Error', 'Failed to import YDK file or operation cancelled.');
+      }
+  };
+
+  const handleImportYDKE = async () => {
+      const deckName = newDeckName.trim() || 'Imported YDKE Deck';
+      if (!ydkeCode.trim().startsWith('ydke://')) {
+          Alert.alert('Error', 'Invalid YDKE code format. Must start with ydke://');
+          return;
+      }
+      setIsImporting(true);
+      const parsed = parseYDKE(ydkeCode.trim());
+      const newDeck = await importDeckFromIDs(deckName, parsed);
+      setIsImporting(false);
+      if (newDeck) {
+          setNewDeckName('');
+          setYdkeCode('');
+          setModalVisible(false);
+          fetchDecks();
+      } else {
+          Alert.alert('Error', 'Failed to import YDKE code.');
+      }
   };
 
   const handleDeleteDeck = async (id: string) => {
@@ -114,14 +157,17 @@ export default function DecksScreen() {
         />
       </MMOWindow>
 
-      <TouchableOpacity 
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
-        accessibilityLabel="Create Deck Button"
-        accessibilityRole="button"
-      >
-        <Ionicons name="add" size={30} color="#fff" />
-      </TouchableOpacity>
+      <View style={styles.fabContainer}>
+          <TouchableOpacity style={[styles.fabMenuButton, {marginBottom: 10}]} onPress={() => handleOpenModal('ydke')}>
+              <Ionicons name="link-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.fabMenuButton, {marginBottom: 10}]} onPress={() => handleOpenModal('ydk')}>
+              <Ionicons name="document-text-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.fab} onPress={() => handleOpenModal('create')}>
+              <Ionicons name="add" size={30} color="#fff" />
+          </TouchableOpacity>
+      </View>
 
       <Modal
         animationType="fade"
@@ -130,23 +176,45 @@ export default function DecksScreen() {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-           <MMOWindow title="Create New Deck" icon="add-circle-outline" onClose={() => setModalVisible(false)} style={styles.modalWindow}>
+           <MMOWindow
+               title={importMode === 'create' ? "Create New Deck" : importMode === 'ydk' ? "Import YDK File" : "Import Master Duel Code"}
+               icon="add-circle-outline"
+               onClose={() => setModalVisible(false)}
+               style={styles.modalWindow}
+            >
                 <View style={styles.modalContent}>
                     <TextInput
                     style={styles.input}
-                    placeholder="Enter Deck Name..."
+                    placeholder={importMode === 'create' ? "Enter Deck Name..." : "Enter Deck Name (Optional)..."}
                     placeholderTextColor={COLORS.textDim}
                     value={newDeckName}
                     onChangeText={setNewDeckName}
                     autoFocus
                     />
+
+                    {importMode === 'ydke' && (
+                        <TextInput
+                            style={[styles.input, { height: 80 }]}
+                            placeholder="ydke://..."
+                            placeholderTextColor={COLORS.textDim}
+                            value={ydkeCode}
+                            onChangeText={setYdkeCode}
+                            multiline
+                        />
+                    )}
+
                     <TouchableOpacity
                         style={styles.createButton}
-                        onPress={handleCreateDeck}
-                        accessibilityLabel="Confirm Create Deck"
-                        accessibilityRole="button"
+                        onPress={
+                            importMode === 'create' ? handleCreateDeck :
+                            importMode === 'ydk' ? handleImportYDK :
+                            handleImportYDKE
+                        }
+                        disabled={isImporting}
                     >
-                        <Text style={styles.createButtonText}>Create Deck</Text>
+                        <Text style={styles.createButtonText}>
+                            {isImporting ? "Importing..." : importMode === 'create' ? "Create Deck" : "Import & Save"}
+                        </Text>
                     </TouchableOpacity>
                 </View>
           </MMOWindow>
@@ -240,14 +308,31 @@ const styles = StyleSheet.create({
     color: COLORS.textDim,
     fontFamily: FONTS.body,
   },
-  fab: {
+  fabContainer: {
     position: 'absolute',
     bottom: 80,
     right: 20,
+    alignItems: 'center',
+  },
+  fab: {
     backgroundColor: COLORS.cyberMagenta,
     width: 50,
     height: 50,
     borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...STYLES.bevelOut,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  fabMenuButton: {
+    backgroundColor: COLORS.electricCyan,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     ...STYLES.bevelOut,

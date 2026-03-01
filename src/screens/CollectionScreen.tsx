@@ -46,40 +46,14 @@ export default function CollectionScreen() {
       );
   };
 
-  const handleExport = () => {
+  const handleManage = () => {
       Alert.alert(
-          "Export Collection",
-          "Choose a format",
+          "Manage Collection",
+          "Choose an action",
           [
               { text: "Cancel", style: "cancel" },
               { 
-                  text: "CSV", 
-                  onPress: async () => {
-                      setLoading(true);
-                      await exportCollectionToCSV();
-                      setLoading(false);
-                  } 
-              },
-              { 
-                  text: "YGOProDeck (.ydk)",
-                  onPress: async () => {
-                      setLoading(true);
-                      await exportCollectionToYDK();
-                      setLoading(false);
-                  } 
-              }
-          ]
-      );
-  };
-
-  const handleImport = () => {
-      Alert.alert(
-          "Import Collection",
-          "Choose a format",
-          [
-              { text: "Cancel", style: "cancel" },
-              { 
-                  text: "CSV", 
+                  text: "Import CSV",
                   onPress: async () => {
                       setLoading(true);
                       const count = await importCollectionFromCSV();
@@ -91,7 +65,15 @@ export default function CollectionScreen() {
                   } 
               },
               { 
-                  text: "YGOProDeck (.ydk)",
+                  text: "Export CSV",
+                  onPress: async () => {
+                      setLoading(true);
+                      await exportCollectionToCSV();
+                      setLoading(false);
+                  } 
+              },
+              { 
+                  text: "Import YDK",
                   onPress: async () => {
                       setLoading(true);
                       const count = await importCollectionFromYDK();
@@ -100,6 +82,14 @@ export default function CollectionScreen() {
                           Alert.alert('Import Complete', `Successfully imported ${count} items.`);
                           fetchCollection();
                       }
+                  } 
+              },
+              { 
+                  text: "Export YDK",
+                  onPress: async () => {
+                      setLoading(true);
+                      await exportCollectionToYDK();
+                      setLoading(false);
                   } 
               }
           ]
@@ -122,13 +112,9 @@ export default function CollectionScreen() {
       {/* Tools Window */}
       <MMOWindow title="Collection: Tools" style={styles.toolsWindow} icon="construct-outline" headerRight={<Ionicons name="information-circle-outline" size={16} color={COLORS.text} style={{ opacity: 0.5 }} />}>
         <View style={styles.actionsBar}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleExport}>
-                <Ionicons name="download-outline" size={16} color={COLORS.text} />
-                <Text style={styles.actionButtonText}>Export Data</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleImport}>
-                <Ionicons name="cloud-upload-outline" size={16} color={COLORS.text} />
-                <Text style={styles.actionButtonText}>Import Data</Text>
+            <TouchableOpacity style={styles.actionButton} onPress={handleManage}>
+                <Ionicons name="folder-open-outline" size={16} color={COLORS.text} />
+                <Text style={styles.actionButtonText}>Manage Data</Text>
             </TouchableOpacity>
              <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center'}}>
                 <Text style={styles.countText}>Items: {collection.length}</Text>
