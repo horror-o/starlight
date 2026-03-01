@@ -1,27 +1,27 @@
 export const COLORS = {
-  // MMO Theme - Juicy Watery Pink
-  deepVoid: '#fff5f9', // Very light airy pink
-  glassBackground: 'rgba(255, 240, 245, 0.85)', // Translucent pale pink
-  chromeMist: '#f3d0df', // Soft pink border
-  electricCyan: '#d63384', // Changed to "Juicy Pink" for accents
-  cyberMagenta: '#e84393', // Red/Alert kept as a vibrant pink/red
-  text: '#5e2a40', // Dark grape/wine for main text
-  textDim: '#9c6b84', // Muted grape for secondary text
+  // MMO Theme - Mint Green
+  deepVoid: '#e8f5e9', // Very light airy green (matches the light squares)
+  glassBackground: 'rgba(232, 245, 233, 0.85)', // Translucent pale green
+  chromeMist: '#c8e6c9', // Soft green border (matches the darker squares)
+  electricCyan: '#388e3c', // Changed to dark green for accents
+  cyberMagenta: '#d32f2f', // Red/Alert kept for warnings but softened slightly
+  text: '#1b5e20', // Dark green for main text
+  textDim: '#4caf50', // Muted green for secondary text
 
   // Specific UI Colors
-  windowHeader: '#fadadd', // Fallback
-  headerGradientStart: '#fceef4', // Light pink top
-  headerGradientEnd: '#f4bdd0',   // Deeper pink bottom
+  windowHeader: '#c8e6c9', // Fallback
+  headerGradientStart: '#e8f5e9', // Light green top
+  headerGradientEnd: '#c8e6c9',   // Deeper green bottom
 
   windowBorderLight: '#ffffff', // Highlight
-  windowBorderDark: '#d9a7b9', // Shadow (dusty pink)
+  windowBorderDark: '#a5d6a7', // Shadow (dusty green)
   inputBackground: '#ffffff',
   slotBackground: 'rgba(255, 255, 255, 0.6)',
 
   // Retro Status Colors
-  success: '#6ab04c', // Kept similar but softer
-  warning: '#f0932b',
-  error: '#eb3b5a',
+  success: '#388e3c', // Dark green success
+  warning: '#f57c00', // Orange warning
+  error: '#d32f2f',   // Red error
 };
 
 export const FONTS = {
@@ -39,17 +39,17 @@ export const STYLES = {
     borderBottomWidth: 1,
     borderTopColor: '#ffffff',
     borderLeftColor: '#ffffff',
-    borderRightColor: '#d9a7b9', // Darker shadow (dusty pink)
-    borderBottomColor: '#d9a7b9',
-    backgroundColor: '#fff0f5', // Lavender blush
+    borderRightColor: '#a5d6a7', // Darker shadow (dusty green)
+    borderBottomColor: '#a5d6a7',
+    backgroundColor: '#e8f5e9', // Mint green background
   },
   bevelIn: {
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderTopColor: '#d9a7b9', // Inner shadow top
-    borderLeftColor: '#d9a7b9', // Inner shadow left
+    borderTopColor: '#a5d6a7', // Inner shadow top
+    borderLeftColor: '#a5d6a7', // Inner shadow left
     borderRightColor: '#ffffff',
     borderBottomColor: '#ffffff',
     backgroundColor: 'rgba(0,0,0,0.03)',
@@ -57,7 +57,7 @@ export const STYLES = {
   windowHeader: {
     // backgroundColor removed here as it will be handled by LinearGradient
     borderBottomWidth: 1,
-    borderBottomColor: '#d98fab', // Pinkish border for header
+    borderBottomColor: '#81c784', // Mint green border for header
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -70,7 +70,7 @@ export const STYLES = {
   },
   glow: {
     // Subtle shadow instead of neon glow
-    shadowColor: '#d63384',
+    shadowColor: '#388e3c',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,

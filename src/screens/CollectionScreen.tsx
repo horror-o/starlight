@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getCollection, removeCollectionItem } from '../services/storage';
 import { exportCollectionToCSV, importCollectionFromCSV } from '../services/csv';
-import { exportCollectionToExcel, importCollectionFromExcel } from '../services/excel';
+import { exportCollectionToYDK, importCollectionFromYDK } from '../services/ydk';
 import { CollectionItem } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Ionicons } from '@expo/vector-icons';
@@ -61,10 +61,10 @@ export default function CollectionScreen() {
                   } 
               },
               { 
-                  text: "Excel (.xlsx)", 
+                  text: "YGOProDeck (.ydk)",
                   onPress: async () => {
                       setLoading(true);
-                      await exportCollectionToExcel();
+                      await exportCollectionToYDK();
                       setLoading(false);
                   } 
               }
@@ -91,10 +91,10 @@ export default function CollectionScreen() {
                   } 
               },
               { 
-                  text: "Excel (.xlsx)", 
+                  text: "YGOProDeck (.ydk)",
                   onPress: async () => {
                       setLoading(true);
-                      const count = await importCollectionFromExcel();
+                      const count = await importCollectionFromYDK();
                       setLoading(false);
                       if (count > 0) {
                           Alert.alert('Import Complete', `Successfully imported ${count} items.`);
@@ -124,11 +124,11 @@ export default function CollectionScreen() {
         <View style={styles.actionsBar}>
             <TouchableOpacity style={styles.actionButton} onPress={handleExport}>
                 <Ionicons name="download-outline" size={16} color={COLORS.text} />
-                <Text style={styles.actionButtonText}>Export</Text>
+                <Text style={styles.actionButtonText}>Export Data</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleImport}>
                 <Ionicons name="cloud-upload-outline" size={16} color={COLORS.text} />
-                <Text style={styles.actionButtonText}>Import</Text>
+                <Text style={styles.actionButtonText}>Import Data</Text>
             </TouchableOpacity>
              <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center'}}>
                 <Text style={styles.countText}>Items: {collection.length}</Text>
@@ -193,6 +193,7 @@ const styles = StyleSheet.create({
       marginLeft: 5,
       fontFamily: FONTS.body,
       fontSize: 12,
+      fontWeight: 'bold', // Made bolder for better visibility
   },
   countText: {
       color: COLORS.textDim,
